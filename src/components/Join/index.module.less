@@ -1,0 +1,20 @@
+.join {
+  &-dot {
+    display: inline-flex;
+
+    > *:not(:first-child)::before {
+      content: "•";
+      color: #fff;
+      margin: 0 4px;
+    }
+  }
+
+  &-comma {
+    display: inline-flex;
+    > *:not(:first-child)::before {
+      content: ",";
+      color: #fff;
+      margin: 0 4px;
+    }
+  }
+}
