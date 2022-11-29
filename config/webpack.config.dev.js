@@ -22,6 +22,15 @@ module.exports = {
         test: /\.(less|css)$/,
         use: ["style-loader", "css-loader", "less-loader"],
       },
+      {
+        test: /\.svg$/,
+        loader: "@svgr/webpack",
+      },
+      {
+        test: /\.(png|jpg|jpeg|gif|bmp|webp|ico)$/,
+        exclude: /node_modules/,
+        type: "asset",
+      },
     ],
   },
   plugins: [
@@ -32,6 +41,7 @@ module.exports = {
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
     alias: {
+      "@assets": path.resolve(__dirname, "../src/assets"),
       "@containers": path.resolve(__dirname, "../src/containers"),
       "@components": path.resolve(__dirname, "../src/components"),
       "@layouts": path.resolve(__dirname, "../src/layouts"),
