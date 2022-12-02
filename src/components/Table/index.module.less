@@ -1,25 +1,60 @@
 .table {
   &__container {
-    table {
-      table-layout: fixed;
-      width: 100%;
+    &[aria-colcount="5"] .table__row {
+      grid-template-columns: 16px 6fr 4fr 3fr minmax(120px, 1fr);
+    }
+    &[aria-colcount="4"] .table__row {
+      grid-template-columns: 16px 4fr 2fr minmax(120px, 1fr);
+    }
+    &[aria-colcount="4"] .table__cell-can-hidden ~ .table__cell-can-hidden {
+      display: none;
+    }
+    &[aria-colcount="3"] .table__cell-can-hidden {
+      display: none;
     }
   }
   &__thead {
-    th {
-      //display: inline-block;
-    }
-  }
-  &__tbody {
+    position: sticky;
+    top: 64px;
+    z-index: 2;
+    border-bottom: 1px solid transparent;
+    background-color: #181818;
   }
   &__row {
-    &-selected {
+    display: grid;
+    padding: 0 16px;
+    grid-gap: 16px;
+    align-items: center;
+    height: 56px;
+    .table__cell:first-child,
+    .table__cell:last-child {
+      justify-self: end;
+    }
+    :global(.button:not([aria-checked="true"])) {
+      opacity: 0;
+    }
+    &:not([aria-rowindex="1"]):hover {
+      background-color: hsla(0, 0%, 100%, 0.1);
+      :global(.button) {
+        opacity: 1;
+      }
+      :global(.link) {
+        color: var(--text-base);
+      }
+    }
+    &[aria-selected="true"] {
+      background-color: hsla(0, 0%, 100%, 0.3) !important;
+      :global(.link) {
+        color: var(--text-base);
+      }
+    }
+    &Disabled {
+      opacity: 0.4;
+      pointer-events: none;
     }
   }
   &__cell {
-    //display: inline-block;
-    > * {
-      width: 100%;
-    }
+    justify-self: start;
+    min-width: 0;
   }
 }
