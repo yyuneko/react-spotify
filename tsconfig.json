@@ -21,8 +21,9 @@
       "@http/*": ["http/*"],
       "@utils/*": ["utils/*"],
       "@locales/*": ["locales/*"],
-      "@style/*": ["styles/*"]
+      "@style/*": ["styles/*"],
+      "@store/*": ["store/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src",".eslintrc"]
 }
