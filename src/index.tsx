@@ -1,39 +1,29 @@
-import React, { Suspense } from "react";
+import React, {useState} from "react";
 import ReactDom from "react-dom/client";
-import {
-	BrowserRouter,
-	Outlet,
-	Route,
-	Routes,
-	useParams,
-} from "react-router-dom";
+import {IntlProvider} from "react-intl";
+import {createBrowserRouter, RouterProvider} from "react-router-dom";
 
-import MainLayout from "@layouts/MainLayout";
-import Login from "@layouts/Login";
-import Home from "@containers/Home";
+import cookie from "@http/cookie";
+import "@style/global.less";
+import "@style/theme.less";
+
+import zhCN from "./locales/zh-CN";
 import routes from "./router";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+window.onSpotifyWebPlaybackSDKReady = () => {
+  cookie.set("sdk_ok", "true");
+};
+
 function App() {
-	return (
-		<BrowserRouter>
-			<Routes>
-				<Route path="/login" element={<Login />}></Route>
-				<Route path="/" element={<MainLayout />}>
-					<Route element={<Home />} />
-					{routes.map((route) => (
-						<Route
-							key={route.path}
-							path={route.path}
-							element={
-								<Suspense>
-									<route.component />
-								</Suspense>
-							}
-						/>
-					))}
-				</Route>
-				<Route path="*" element={<div>404 Not Found</div>} />
-			</Routes>
-		</BrowserRouter>
-	);
+  const [locale] = useState("zh-CN");
+
+  return (
+    <IntlProvider locale={locale} messages={zhCN}>
+      <RouterProvider router={createBrowserRouter(routes)}></RouterProvider>
+    </IntlProvider>
+  );
 }
+
 ReactDom.createRoot(document.getElementById("root")).render(<App />);
