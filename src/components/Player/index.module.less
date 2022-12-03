@@ -1,0 +1,73 @@
+.player {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  background-color: #181818;
+  border-top: 1px solid #282828;
+  :global(.button) {
+    width: var(--button-size);
+    height: var(--button-size);
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+  &Track {
+    min-width: 180px;
+    width: 30%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0 16px;
+    :global(.link):hover {
+      color: var(--text-base);
+    }
+  }
+  &Controller {
+    display: flex;
+    flex-direction: column;
+    width: 40%;
+    max-width: 722px;
+    align-items: center;
+    .progressBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    &__buttons {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 8px;
+      &Left {
+        display: flex;
+        justify-content: flex-end;
+        flex: 1;
+        gap: 8px;
+      }
+      :global(.button).togglePlay {
+        border-radius: var(--button-size);
+        background-color: var(--text-base) !important;
+        color: #000 !important;
+      }
+      &Right {
+        display: flex;
+        justify-content: flex-start;
+        flex: 1;
+        gap: 8px;
+      }
+    }
+  }
+  &Other {
+    min-width: 180px;
+    width: 30%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 16px;
+  }
+}
