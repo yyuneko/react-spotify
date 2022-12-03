@@ -1,0 +1,53 @@
+.progressBar {
+  --progress-bar-height: 4px;
+  height: 12px;
+  overflow: hidden;
+
+  &__bg {
+    margin-top: 4px;
+    background-color: hsla(0, 0%, 100%, 0.3);
+    height: var(--progress-bar-height);
+    border-radius: var(--progress-bar-height);
+    position: relative;
+  }
+
+  &__front {
+    background-color: white;
+    height: 100%;
+    border-radius: var(--progress-bar-height);
+    width: 100%;
+    position: absolute;
+    transform: translateX(calc(-100% + var(--progress-bar-width)));
+    display: flex;
+
+    &Current {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--progress-bar-height);
+    }
+
+    &Button {
+      display: none;
+      width: 12px;
+      height: 12px;
+      margin-left: -6px;
+      border-radius: 100%;
+      transform: translateY(-50%);
+      background-color: var(--text-base);
+      position: absolute;
+      top: 50%;
+      left: var(--progress-bar-width);
+      z-index: 222;
+    }
+  }
+
+  &:hover {
+    .progressBar__frontCurrent {
+      background-color: var(--icon-highlight);
+    }
+
+    .progressBar__frontButton {
+      display: block;
+    }
+  }
+}
