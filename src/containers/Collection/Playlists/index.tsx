@@ -7,16 +7,24 @@ import { useNavigate } from "react-router-dom";
 
 import { PlaylistCard } from "@components/Card";
 import Join from "@components/Join";
+import Loading from "@components/Loading";
 import PlayButton from "@components/PlayButton";
 import { getAListOfCurrentUsersPlaylists } from "@service/playlists";
-import { SimplifiedPlaylistObject } from "@service/playlists/types";
+import {
+  PlaylistTrackObject,
+  SimplifiedPlaylistObject,
+} from "@service/playlists/types";
 import { getUsersSavedTracks } from "@service/tracks";
 import { TrackObject } from "@service/tracks/types";
+import { PagingObject } from "@service/types";
 import { state } from "@store/index";
 import { format, useCurrentUser } from "@utils/index";
 import { useSpotifyPlayer } from "@utils/player";
 
-function LikedSongsCard() {
+function LikedSongsCard(props: {
+  likedSongs?: PagingObject<PlaylistTrackObject>;
+}) {
+  const { likedSongs } = props;
   const user = useCurrentUser();
   const { formatMessage } = useIntl();
   const spotify = useSpotifyPlayer();
@@ -33,15 +41,6 @@ function LikedSongsCard() {
   const currentDevice = useSelector<state, string | undefined>(
     (state) => state.player.device.current
   );
-  const { data: likedSongs, run: runGetLikedSongs } = useRequest(
-    getUsersSavedTracks,
-    { manual: true }
-  );
-  useEffect(() => {
-    if (user) {
-      runGetLikedSongs({ limit: 7 });
-    }
-  }, [user]);
 
   const handlePlayCurrentPlaylist = () => {
     if (!currentDevice) {
@@ -126,18 +125,32 @@ export default function Playlists() {
   const user = useCurrentUser();
   const { formatMessage } = useIntl();
   const [total, setTotal] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [playlists, setPlaylists] = useState<SimplifiedPlaylistObject[]>([]);
-  const { run: runGetPlaylists } = useRequest(getAListOfCurrentUsersPlaylists, {
-    manual: true,
-    onSuccess: (res) => {
-      setTotal(res.total);
-      setPlaylists(playlists.concat(res.items));
-    },
-  });
+  const { run: runGetPlaylists} = useRequest(
+    getAListOfCurrentUsersPlaylists,
+    {
+      manual: true,
+      onSuccess: (res) => {
+        setTotal(res.total);
+        setPlaylists(playlists.concat(res.items));
+      },
+    }
+  );
+  const { data: likedSongs, run: runGetLikedSongs } = useRequest(
+    getUsersSavedTracks,
+    {
+      manual: true,
+      onSuccess: () => {
+        setInitialLoading(false);
+      },
+    }
+  );
   useEffect(() => {
     if (user) {
       setPlaylists([]);
       runGetPlaylists({ limit: 20 });
+      runGetLikedSongs({ limit: 7 });
     }
   }, [user]);
 
@@ -147,30 +160,34 @@ export default function Playlists() {
     }
   };
 
-  return <div>
-    <h1 className="text-base">{formatMessage({ id: "playlists" })}</h1>
-    <InfiniteScroll
-      next={handleSearchPlaylists}
-      hasMore={playlists.length < total}
-      loader={"Loading"}
-      dataLength={playlists.length}
-      scrollableTarget="app__main"
-    >
-      <div
-        className="grid"
-        style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
-      >
-        <LikedSongsCard/>
-        {playlists.map((playlist) =>
-          <PlaylistCard
-            key={playlist.id}
-            id={playlist.id}
-            media={playlist.images?.[0]?.url}
-            name={playlist.name}
-            owner={playlist.owner.display_name ?? playlist.owner.id}
-          />
-        )}
+  return (
+    <Loading loading={initialLoading}>
+      <div>
+        <h1 className="text-base">{formatMessage({ id: "playlists" })}</h1>
+        <InfiniteScroll
+          next={handleSearchPlaylists}
+          hasMore={playlists.length < total}
+          loader={"Loading"}
+          dataLength={playlists.length}
+          scrollableTarget="app__main"
+        >
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
+          >
+            <LikedSongsCard likedSongs={likedSongs} />
+            {playlists.map((playlist) => 
+              <PlaylistCard
+                key={playlist.id}
+                id={playlist.id}
+                media={playlist.images?.[0]?.url}
+                name={playlist.name}
+                owner={playlist.owner.display_name ?? playlist.owner.id}
+              />
+            )}
+          </div>
+        </InfiniteScroll>
       </div>
-    </InfiniteScroll>
-  </div>;
+    </Loading>
+  );
 }

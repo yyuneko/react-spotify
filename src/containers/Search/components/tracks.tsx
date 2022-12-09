@@ -2,6 +2,7 @@ import { useRequest } from "ahooks";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
+import Loading from "@components/Loading";
 import Table from "@components/Table";
 import { SearchTabProps } from "@containers/Search";
 import { search } from "@service/search";
@@ -13,6 +14,7 @@ import { useSpotifyPlayer } from "@utils/player";
 export default function SearchTracks(props: SearchTabProps) {
   const { q } = props;
   const spotify = useSpotifyPlayer();
+  const [initialLoading, setInitialLoading] = useState(true);
   const [tracks, setTracks] = useState<TrackObject[]>([]);
   const [rowSelected, setRowSelected] = useState<number | undefined>();
   const [total, setTotal] = useState(0);
@@ -24,6 +26,10 @@ export default function SearchTracks(props: SearchTabProps) {
   const { run, loading } = useRequest(search, {
     manual: true,
     onSuccess: (res) => {
+      if (initialLoading) {
+        setInitialLoading(false);
+      }
+
       if (res.tracks) {
         setTotal(res.tracks.total);
         setTracks(tracks.concat(res.tracks.items));
@@ -72,21 +78,23 @@ export default function SearchTracks(props: SearchTabProps) {
   });
 
   return (
-    <div className="pl-16 pr-16">
-      <Table<TrackObject>
-        gridTemplateColumns={{
-          4: "16px 4fr 2fr minmax(120px, 1fr)",
-          3: "16px 4fr minmax(120px, 1fr)",
-        }}
-        colcount={colcount > 4 ? 4 : 3}
-        total={total}
-        next={handleSearchTracks}
-        dataSource={tracks}
-        columns={columns}
-        rowKey="id"
-        onRow={handleOnRow}
-        rowSelection={rowSelected}
-      />
-    </div>
+    <Loading loading={initialLoading}>
+      <div className="pl-16 pr-16">
+        <Table<TrackObject>
+          gridTemplateColumns={{
+            4: "16px 4fr 2fr minmax(120px, 1fr)",
+            3: "16px 4fr minmax(120px, 1fr)",
+          }}
+          colcount={colcount > 4 ? 4 : 3}
+          total={total}
+          next={handleSearchTracks}
+          dataSource={tracks}
+          columns={columns}
+          rowKey="id"
+          onRow={handleOnRow}
+          rowSelection={rowSelected}
+        />
+      </div>
+    </Loading>
   );
 }

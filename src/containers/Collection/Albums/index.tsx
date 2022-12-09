@@ -5,6 +5,7 @@ import { useIntl } from "react-intl";
 
 import { AlbumCard } from "@components/Card";
 import Link from "@components/Link";
+import Loading from "@components/Loading";
 import { getUsersSavedAlbums } from "@service/albums";
 import { SavedAlbumObject } from "@service/albums/types";
 import { useCurrentUser } from "@utils/index";
@@ -13,10 +14,15 @@ export default function Albums() {
   const user = useCurrentUser();
   const { formatMessage } = useIntl();
   const [total, setTotal] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [albums, setAlbums] = useState<SavedAlbumObject[]>([]);
   const { run: runGetAlbums } = useRequest(getUsersSavedAlbums, {
     manual: true,
     onSuccess: (res) => {
+      if (initialLoading) {
+        setInitialLoading(false);
+      }
+
       setTotal(res.total);
       setAlbums(albums.concat(res.items));
     },
@@ -34,48 +40,50 @@ export default function Albums() {
   };
 
   return (
-    <div>
-      <h1 className="text-base">{formatMessage({ id: "albums" })}</h1>
-      <InfiniteScroll
-        next={handleSearchAlbums}
-        hasMore={albums.length < total}
-        loader={"Loading"}
-        dataLength={albums.length}
-        scrollableTarget="app__main"
-      >
-        <div
-          className="grid"
-          style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
+    <Loading loading={initialLoading}>
+      <div>
+        <h1 className="text-base">{formatMessage({ id: "albums" })}</h1>
+        <InfiniteScroll
+          next={handleSearchAlbums}
+          hasMore={albums.length < total}
+          loader={"Loading"}
+          dataLength={albums.length}
+          scrollableTarget="app__main"
         >
-          {albums.map((album) => 
-            <AlbumCard
-              key={album.album.id}
-              id={album.album.id}
-              media={album.album.images?.[0]?.url}
-              name={album.album.name}
-              yearOrArtists={
-                <div
-                  className="flex"
-                  style={{
-                    alignItems: "baseline",
-                    whiteSpace: "pre",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {album.album.artists.map((artist, index) => 
-                    <span key={artist.id}>
-                      <Link to={`/artist/${artist.id}`} ellipsis={false}>
-                        {artist.name}
-                      </Link>
-                      {index != album.album.artists.length - 1 && ", "}
-                    </span>
-                  )}
-                </div>
-              }
-            />
-          )}
-        </div>
-      </InfiniteScroll>
-    </div>
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
+          >
+            {albums.map((album) => 
+              <AlbumCard
+                key={album.album.id}
+                id={album.album.id}
+                media={album.album.images?.[0]?.url}
+                name={album.album.name}
+                yearOrArtists={
+                  <div
+                    className="flex"
+                    style={{
+                      alignItems: "baseline",
+                      whiteSpace: "pre",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {album.album.artists.map((artist, index) => 
+                      <span key={artist.id}>
+                        <Link to={`/artist/${artist.id}`} ellipsis={false}>
+                          {artist.name}
+                        </Link>
+                        {index != album.album.artists.length - 1 && ", "}
+                      </span>
+                    )}
+                  </div>
+                }
+              />
+            )}
+          </div>
+        </InfiniteScroll>
+      </div>
+    </Loading>
   );
 }

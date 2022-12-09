@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
+import Loading from "@components/Loading";
 import NavBar from "@components/NavBar";
 import PlayButton from "@components/PlayButton";
 import Table from "@components/Table";
@@ -25,6 +26,7 @@ function Favorite() {
   const spotify = useSpotifyPlayer();
   const { formatMessage } = useIntl();
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState(true);
   const colcount = useSelector<state, number>((state) => state.ui.colcount);
   const [rowSelected, setRowSelected] = useState<number | undefined>();
   const [tracks, setTracks] = useState<PlaylistTrackObject[]>([]);
@@ -41,16 +43,19 @@ function Favorite() {
     (state) => state.player.trackWindow.currentTrack
   );
 
-  const {
-    data: playlistDetail,
-    loading,
-    run: runGetTracks,
-  } = useRequest(getUsersSavedTracks, {
-    manual: true,
-    onSuccess: (res) => {
-      res && setTracks(tracks.concat(res.items));
-    },
-  });
+  const { data: playlistDetail, run: runGetTracks } = useRequest(
+    getUsersSavedTracks,
+    {
+      manual: true,
+      onSuccess: (res) => {
+        if (loading) {
+          setLoading(false);
+        }
+
+        res && setTracks(tracks.concat(res.items));
+      },
+    }
+  );
 
   const tracksCount = useMemo(
     () =>
@@ -140,7 +145,7 @@ function Favorite() {
   });
 
   return (
-    <>
+    <Loading loading={loading}>
       <NavBar />
       <div style={{ display: "flex", width: "100%", alignItems: "flex-end" }}>
         <Image
@@ -198,7 +203,7 @@ function Favorite() {
           }}
         />
       </div>
-    </>
+    </Loading>
   );
 }
 
