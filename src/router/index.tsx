@@ -14,6 +14,8 @@ const Profile = lazy(() => import("@containers/Profile"));
 const Search = lazy(() => import("@containers/Search"));
 const Artist = lazy(() => import("@containers/Artist"));
 const Collection = lazy(() => import("@containers/Collection"));
+const Lyrics = lazy(() => import("@containers/Lyrics"));
+const Queue = lazy(() => import("@containers/Queue"));
 const routes = [
   {
     path: "/login",
@@ -78,21 +80,11 @@ const routes = [
         ,
       },
       {
-        path: "collection",
+        path: "collection/:type",
         element: 
           <Suspense>
             <Collection />
           </Suspense>
-        ,
-        children: [
-          { path: "playlists" },
-          {
-            path: "artists",
-          },
-          {
-            path: "albums",
-          },
-        ],
       },
       {
         path: "collection/tracks",
@@ -107,6 +99,22 @@ const routes = [
         element: 
           <Suspense>
             <Artist />
+          </Suspense>
+        ,
+      },
+      {
+        path: "lyrics",
+        element: 
+          <Suspense>
+            <Lyrics />
+          </Suspense>
+        ,
+      },
+      {
+        path: "/queue",
+        element: 
+          <Suspense>
+            <Queue />
           </Suspense>
         ,
       },
