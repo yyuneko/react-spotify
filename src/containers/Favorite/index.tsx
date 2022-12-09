@@ -1,42 +1,46 @@
-import classnames from "_classnames@2.3.2@classnames";
-import { useDebounce, useRequest } from "ahooks";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRequest } from "ahooks";
+import React, { useEffect, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import Equalizer from "@assets/icons/equalizer.gif";
-import { Follow } from "@components/Follow";
+import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
 import NavBar from "@components/NavBar";
 import PlayButton from "@components/PlayButton";
-import Table, { ColumnProp } from "@components/Table";
+import Table from "@components/Table";
 import { PlaylistTrackObject } from "@service/playlists/types";
 import { getUsersSavedTracks } from "@service/tracks";
 import { TrackObject } from "@service/tracks/types";
 import { state } from "@store/index";
-import { PlayerState } from "@store/player/reducer";
-import { dayjs, format, useCurrentUser } from "@utils/index";
+import { setTitle } from "@store/ui/reducer";
+import useColumns from "@utils/columns";
+import { format, useCurrentUser } from "@utils/index";
 import { useSpotifyPlayer } from "@utils/player";
 
 import styles from "../PlayListDetail/index.module.less";
 
-function Favorite(props: any) {
-  const { className } = props;
+function Favorite() {
   const user = useCurrentUser();
   const spotify = useSpotifyPlayer();
-  const { formatDate, formatMessage } = useIntl();
+  const { formatMessage } = useIntl();
+  const dispatch = useDispatch();
+  const colcount = useSelector<state, number>((state) => state.ui.colcount);
   const [rowSelected, setRowSelected] = useState<number | undefined>();
   const [tracks, setTracks] = useState<PlaylistTrackObject[]>([]);
-  const [colcount, setColCount] = useState(window.innerWidth > 1000 ? 5 : 4);
-  const colcountDebounce = useDebounce(colcount, { wait: 500 });
-  const {
-    context,
-    position,
-    paused,
-    device: { current: currentDevice },
-    trackWindow: { currentTrack },
-  } = useSelector<state, PlayerState>((state) => state.player);
+  const context = useSelector<
+    state,
+    { type?: string; id?: string; uri?: string }
+  >((state) => state.player.context);
+  const position = useSelector<state, number>((state) => state.player.position);
+  const paused = useSelector<state, boolean>((state) => state.player.paused);
+  const currentDevice = useSelector<state, string | undefined>(
+    (state) => state.player.device.current
+  );
+  const currentTrack = useSelector<state, TrackObject | undefined>(
+    (state) => state.player.trackWindow.currentTrack
+  );
+
   const {
     data: playlistDetail,
     loading,
@@ -59,113 +63,26 @@ function Favorite(props: any) {
       ),
     [playlistDetail?.total]
   );
-  const columns: ColumnProp<PlaylistTrackObject>[] = [
-    {
-      dataIndex: "number",
-      title: "#",
-      visible: true,
-      render: (t, r, index) => {
-        return currentTrack?.id === r.track?.id && !paused ? 
-          <img src={Equalizer} width="14" height="14" />
-          : 
-          <span className={currentTrack?.id === r.track?.id ? "playing" : ""}>
-            {index + 1}
-          </span>
-        ;
-      },
-    },
-    {
-      dataIndex: "track",
-      title: formatMessage({ id: "sort.title" }),
-      visible: true,
-      render: (t: TrackObject) => 
-        <div className="inline-flex w-1-1">
-          <img
-            src={t.album.images?.[0]?.url}
-            width="40"
-            height="40"
-            className="mr-16"
-          />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              minWidth: 0,
-              maxWidth: "calc(100% - 40px)",
-            }}
-          >
-            <Link
-              to={`/track/${t.id}`}
-              className={classnames({
-                "text-base": true,
-                "text-m": true,
-                playing: currentTrack?.id === t.id,
-              })}
-            >
-              {t.name}
-            </Link>
-            <Join>
-              {t.artists.map((artist) => 
-                <Link
-                  key={artist.id}
-                  to={`/artist/${artist.id}`}
-                  className="text-s"
-                >
-                  {artist.name}
-                </Link>
-              )}
-            </Join>
-          </div>
-        </div>
-      ,
-    },
-    {
-      dataIndex: "track",
-      title: formatMessage({ id: "sort.album" }),
-      visible: (colcount) => colcount >= 4,
-      render: (t: TrackObject) => 
-        <div>
-          <Link to={`/album/${t.album.id}`} className=" text-s">
-            {t.album.name}
-          </Link>
-        </div>
-      ,
-    },
-    {
-      dataIndex: "added_at",
-      title: formatMessage({ id: "sort.date-added" }),
-      visible: (colcount) => colcount >= 5,
-      render: (t: string) => <div>{formatDate(t)}</div>,
-    },
-    {
-      dataIndex: "track",
-      title: "时长",
-      visible: (colcount) => colcount >= 3,
-      render: (t: TrackObject, r) => 
-        <div className="inline-flex" style={{ alignItems: "center" }}>
-          <Follow followed={r.is_saved} className="mr-24" />
-          <div className="ml-8">
-            {dayjs.duration(t.duration_ms).format("m:ss")}
-          </div>
-        </div>
-      ,
-    },
-  ];
-  const onWindowResize = useCallback((e) => {
-    setColCount(e.target.innerWidth > 1000 ? 5 : 4);
-  }, []);
+  const columns = useColumns({
+    contextUri: `spotify:user:${user?.id}`,
+    album: { visible: (colCnt) => colCnt >= 4 },
+    addAt: { show: true, visible: (colCnt: number) => colCnt >= 5 },
+  });
 
   useEffect(() => {
-    user && runGetTracks({ limit: 20, market: "from_token" });
+    user && runGetTracks({ limit: 20 });
   }, [user]);
-
   useEffect(() => {
-    window.addEventListener("resize", onWindowResize);
-
-    return function () {
-      window.removeEventListener("resize", onWindowResize);
-    };
-  }, []);
+    if (paused) {
+      dispatch(
+        setTitle(
+          `Spotify - ${formatMessage({
+            id: "keyboard.shortcuts.description.likedSongs",
+          })}`
+        )
+      );
+    }
+  }, [paused]);
 
   const handlePlayCurrentPlaylist = () => {
     if (!playlistDetail || !currentDevice) {
@@ -175,7 +92,7 @@ function Favorite(props: any) {
     if (paused) {
       spotify.start(
         { device_id: currentDevice },
-        context.uri === `spotify:user:${user?.id}:collection`
+        context.uri === `spotify:user:${user?.id}:collection` && currentTrack
           ? {
             context_uri: `spotify:user:${user?.id}:collection`,
             offset: { uri: currentTrack.uri },
@@ -196,11 +113,13 @@ function Favorite(props: any) {
     runGetTracks({
       offset: tracks.length,
       limit: 20,
-      market: "from_token",
     });
   };
 
-  const handleOnRow = (row: PlaylistTrackObject, index: number) => ({
+  const handleOnRow = (
+    row: Omit<PlaylistTrackObject, "track"> & TrackObject,
+    index: number
+  ) => ({
     onClick: () => {
       if (index === rowSelected) {
         setRowSelected(undefined);
@@ -220,18 +139,16 @@ function Favorite(props: any) {
     },
   });
 
-  return playlistDetail ? 
+  return (
     <>
       <NavBar />
       <div style={{ display: "flex", width: "100%", alignItems: "flex-end" }}>
-        <img
+        <Image
           src="https://t.scdn.co/images/3099b3803ad9496896c43f22fe9be8c4.png"
-          className={styles["playlist-cover"]}
+          className={styles["playlistCover"]}
         />
         <div style={{ flex: "1" }}>
-          <span className="text-base">
-            {formatMessage({ id: "playlists" })}
-          </span>
+          <span className="text-base">{formatMessage({ id: "playlist" })}</span>
           <div className="text-xl text-base text-bold">
             {formatMessage({ id: "keyboard.shortcuts.description.likedSongs" })}
           </div>
@@ -259,22 +176,30 @@ function Favorite(props: any) {
         />
       </div>
       <div className="pl-16 pr-16">
-        <Table<PlaylistTrackObject>
-          total={playlistDetail.total}
+        <Table<Omit<PlaylistTrackObject, "track"> & TrackObject>
+          colcount={colcount >= 5 ? 5 : colcount >= 4 ? 4 : 3}
+          total={playlistDetail?.total ?? 0}
           next={handleSearchTracks}
-          colcount={colcountDebounce}
-          dataSource={tracks}
+          dataSource={tracks.map((item) => ({
+            ...item.track,
+            is_saved: item.is_saved,
+            added_at: item.added_at,
+            added_by: item.added_by,
+          }))}
           columns={columns}
-          rowKey={["track", "id"]}
-          enabledKey={["track", "is_playable"]}
+          rowKey="id"
+          enabledKey="is_playable"
           onRow={handleOnRow}
           rowSelection={rowSelected}
+          gridTemplateColumns={{
+            5: "16px 6fr 4fr 3fr minmax(120px, 1fr)",
+            4: "16px 4fr 2fr minmax(120px, 1fr)",
+            3: "16px 4fr minmax(120px, 1fr)",
+          }}
         />
       </div>
     </>
-    : 
-    <div className={className}>Loading</div>
-  ;
+  );
 }
 
 export default Favorite;
