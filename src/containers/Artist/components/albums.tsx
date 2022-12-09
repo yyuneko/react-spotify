@@ -25,14 +25,7 @@ export default function Albums(props: { items: SimplifiedAlbumObject[] }) {
           media={album.images[0].url}
           name={album.name}
           yearOrArtists={
-            <div
-              className="flex"
-              style={{
-                alignItems: "baseline",
-                whiteSpace: "pre",
-                flexWrap: "wrap",
-              }}
-            >
+            <div>
               <span>{dayjs(album.release_date).year()}</span>
               {" • "}
               <span>{formatMessage({ id: album.type })}</span>
