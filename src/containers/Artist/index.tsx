@@ -5,11 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import { ArtistCard } from "@components/Card";
-import Image from "@components/Image";
-import Loading from "@components/Loading";
+import ContentContainer from "@components/ContentContainer";
 import { PlaylistMenu } from "@components/Menu";
-import NavBar from "@components/NavBar";
-import PlayButton from "@components/PlayButton";
 import Table from "@components/Table";
 import Tabs from "@components/Tabs";
 import Albums from "@containers/Artist/components/albums";
@@ -31,8 +28,6 @@ import { setTitle } from "@store/ui/reducer";
 import useColumns from "@utils/columns";
 import { format } from "@utils/index";
 import { useSpotifyPlayer } from "@utils/player";
-
-import styles from "./index.module.less";
 
 function Artist() {
   const { id } = useParams();
@@ -92,17 +87,9 @@ function Artist() {
     getAnArtistsRelatedArtists,
     { manual: true }
   );
-  const context = useSelector<
-    state,
-    { type?: string; id?: string; uri?: string }
-  >((state) => state.player.context);
-  const position = useSelector<state, number>((state) => state.player.position);
   const paused = useSelector<state, boolean>((state) => state.player.paused);
   const currentDevice = useSelector<state, string | undefined>(
     (state) => state.player.device.current
-  );
-  const currentTrack = useSelector<state, TrackObject | undefined>(
-    (state) => state.player.trackWindow.currentTrack
   );
   const columns = useColumns({
     contextUri: artistDetail?.uri,
@@ -139,27 +126,6 @@ function Artist() {
     }
   };
 
-  const handlePlayCurrentArtist = () => {
-    if (!artistDetail) {
-      return;
-    }
-
-    if (paused) {
-      spotify.start(
-        { device_id: currentDevice },
-        context.uri === artistDetail?.uri && currentTrack
-          ? {
-            context_uri: artistDetail?.uri,
-            offset: { uri: currentTrack.uri },
-            position_ms: position,
-          }
-          : { context_uri: artistDetail?.uri }
-      );
-    } else {
-      spotify.player.pause();
-    }
-  };
-
   const handleOnRow = (row: TrackObject, index: number) => ({
     onClick: () => {
       if (index === rowSelected) {
@@ -174,144 +140,116 @@ function Artist() {
   });
 
   return (
-    <Loading loading={loading}>
-      <>
-        <NavBar></NavBar>
-        <div
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "flex-end",
-            boxSizing: "border-box",
-          }}
-          className="pl-16 pr-16 pb-24"
-        >
-          <Image
-            alt="cover"
-            className={styles["artistCover"]}
-            src={artistDetail?.images?.[0]?.url}
-          />
-          <div style={{ flex: "1" }}>
-            <div className="text-xxl text-base text-bold">
-              {artistDetail?.name}
-            </div>
-            <div>
-              {format(
-                formatMessage({ id: "artist.monthly-listeners-count" }),
-                artistDetail?.popularity
-              )}
-            </div>
-          </div>
-        </div>
-        <div
-          style={{ height: "104px", boxSizing: "border-box" }}
-          className="flex p-24"
-        >
-          <PlayButton
-            size={56}
-            className="mr-32"
-            isPlaying={!paused && context.uri === artistDetail?.uri}
-            onClick={handlePlayCurrentArtist}
-          />
+    <ContentContainer
+      initialLoading={loading}
+      type="artist"
+      cover={artistDetail?.images?.[0]?.url}
+      title={artistDetail?.name}
+      extra={format(
+        formatMessage({ id: "artist.monthly-listeners-count" }),
+        artistDetail?.popularity
+      )}
+      operationExtra={
+        <>
           <button onClick={handleSwitchFollowStatus}>
             {formatMessage({ id: following?.[0] ? "following" : "follow" })}
           </button>
           <PlaylistMenu id={id} />
-        </div>
+        </>
+      }
+      contextUri={`spotify:artist:${id}`}
+    >
+      <section>
+        <h1 className="text-base">
+          {formatMessage({ id: "artist.popular-tracks" })}
+        </h1>
+        <Table<TrackObject>
+          gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
+          colcount={3}
+          showHeader={false}
+          dataSource={topTracks?.tracks ?? []}
+          columns={columns}
+          rowKey={(row) => row.album.id + "_" + row.id}
+          total={topTracks?.tracks?.length ?? 0}
+          next={() => false}
+          onRow={handleOnRow}
+          rowSelection={rowSelected}
+        />
+      </section>
+      <section>
+        <h1 className="text-base">
+          {formatMessage({ id: "artist-page.discography" })}
+        </h1>
+        <Tabs
+          items={[
+            /*
+             * {
+             *   key: "artist-page.popular",
+             *   label: formatMessage({ id: "artist-page.popular" }),
+             *   children: <Albums items={albums.items.sort((a,b)=>a.)} />,
+             * },
+             */
+            {
+              key: "artist.albums",
+              label: formatMessage({ id: "artist.albums" }),
+              children: !!albumsGroup.length && <Albums items={albumsGroup} />,
+            },
+            {
+              key: "artist.singles",
+              label: formatMessage({ id: "artist.singles" }),
+              children: !!singlesGroup.length && 
+                <Albums items={singlesGroup} />
+              ,
+            },
+            {
+              key: "artist.compilations",
+              label: formatMessage({ id: "artist.compilations" }),
+              children: !!compilationsGroup.length && 
+                <Albums items={compilationsGroup} />
+              ,
+            },
+          ]}
+        />
+      </section>
+      <section>
+        <h1 className="text-base">
+          {format(
+            formatMessage({ id: "artist-page.featuring.seo.title" }),
+            artistDetail?.name
+          )}
+        </h1>
+      </section>
+      {!!relatedArtists?.artists?.length && 
         <section>
           <h1 className="text-base">
-            {formatMessage({ id: "artist.popular-tracks" })}
+            {formatMessage({ id: "artist-page.fansalsolike" })}
           </h1>
-          <Table<TrackObject>
-            gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
-            colcount={3}
-            showHeader={false}
-            dataSource={topTracks?.tracks ?? []}
-            columns={columns}
-            rowKey={(row) => row.album.id + "_" + row.id}
-            total={topTracks?.tracks?.length ?? 0}
-            next={() => false}
-            onRow={handleOnRow}
-            rowSelection={rowSelected}
-          />
-        </section>
-        <section>
-          <h1 className="text-base">
-            {formatMessage({ id: "artist-page.discography" })}
-          </h1>
-          <Tabs
-            items={[
-              /*
-               * {
-               *   key: "artist-page.popular",
-               *   label: formatMessage({ id: "artist-page.popular" }),
-               *   children: <Albums items={albums.items.sort((a,b)=>a.)} />,
-               * },
-               */
-              {
-                key: "artist.albums",
-                label: formatMessage({ id: "artist.albums" }),
-                children: !!albumsGroup.length && 
-                  <Albums items={albumsGroup} />
-                ,
-              },
-              {
-                key: "artist.singles",
-                label: formatMessage({ id: "artist.singles" }),
-                children: !!singlesGroup.length && 
-                  <Albums items={singlesGroup} />
-                ,
-              },
-              {
-                key: "artist.compilations",
-                label: formatMessage({ id: "artist.compilations" }),
-                children: !!compilationsGroup.length && 
-                  <Albums items={compilationsGroup} />
-                ,
-              },
-            ]}
-          />
-        </section>
-        <section>
-          <h1 className="text-base">
-            {format(
-              formatMessage({ id: "artist-page.featuring.seo.title" }),
-              artistDetail?.name
+          <div
+            className="grid"
+            aria-colcount={colcount}
+            style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
+          >
+            {relatedArtists.artists.slice(0, colcount).map((artist) => 
+              <ArtistCard
+                key={artist.id}
+                id={artist.id}
+                media={artist.images[0]?.url}
+                name={artist.name}
+                type={formatMessage({ id: "card.tag.artist" })}
+              />
             )}
-          </h1>
+          </div>
         </section>
-        {!!relatedArtists?.artists?.length && 
-          <section>
-            <h1 className="text-base">
-              {formatMessage({ id: "artist-page.fansalsolike" })}
-            </h1>
-            <div
-              className="grid"
-              aria-colcount={colcount}
-              style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
-            >
-              {relatedArtists.artists.slice(0, colcount).map((artist) => 
-                <ArtistCard
-                  key={artist.id}
-                  id={artist.id}
-                  media={artist.images[0].url}
-                  name={artist.name}
-                  type={formatMessage({ id: "card.tag.artist" })}
-                />
-              )}
-            </div>
-          </section>
-        }
-        {!!appearsOnGroup.length && 
-          <section>
-            <h1 className="text-base">
-              {formatMessage({ id: "artist.appears-on" })}
-            </h1>
-            <Albums items={appearsOnGroup} />
-          </section>
-        }
-      </>
-    </Loading>
+      }
+      {!!appearsOnGroup.length && 
+        <section>
+          <h1 className="text-base">
+            {formatMessage({ id: "artist.appears-on" })}
+          </h1>
+          <Albums items={appearsOnGroup} />
+        </section>
+      }
+    </ContentContainer>
   );
 }
 

@@ -5,13 +5,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import { AlbumCard } from "@components/Card";
+import ContentContainer from "@components/ContentContainer";
 import { SaveAlbum } from "@components/Follow";
-import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
 import { PlaylistMenu } from "@components/Menu";
-import NavBar from "@components/NavBar";
-import PlayButton from "@components/PlayButton";
 import Table from "@components/Table";
 import { getAnAlbum, getAnAlbumsTracks } from "@service/albums";
 import { getAnArtistsAlbums } from "@service/artists";
@@ -24,8 +22,7 @@ import { useSpotifyPlayer } from "@utils/player";
 
 import styles from "./index.module.less";
 
-function AlbumDetail(props: any) {
-  const { className } = props;
+function AlbumDetail() {
   const { id } = useParams();
   const user = useCurrentUser();
   const spotify = useSpotifyPlayer();
@@ -35,13 +32,11 @@ function AlbumDetail(props: any) {
   const [rowSelected, setRowSelected] = useState<number | undefined>();
   const [tracks, setTracks] = useState<TrackObject[]>([]);
 
-  const position = useSelector<state, number>((state) => state.player.position);
   const paused = useSelector<state, boolean>((state) => state.player.paused);
-  const context = useSelector<
-    state,
-    { type?: string; id?: string; uri?: string }
-  >((state) => state.player.context);
-  const currentTrack = useSelector<state, TrackObject | undefined>(
+  useSelector<state, { type?: string; id?: string; uri?: string }>(
+    (state) => state.player.context
+  );
+  useSelector<state, TrackObject | undefined>(
     (state) => state.player.trackWindow.currentTrack
   );
   const currentDevice = useSelector<state, string | undefined>(
@@ -57,7 +52,11 @@ function AlbumDetail(props: any) {
     )
   );
 
-  const { data: albumDetail, run: runGetAlbumDetail } = useRequest(getAnAlbum, {
+  const {
+    data: albumDetail,
+    run: runGetAlbumDetail,
+    loading,
+  } = useRequest(getAnAlbum, {
     manual: true,
     onSuccess: (res) => {
       res && setTracks(res.tracks.items);
@@ -96,27 +95,6 @@ function AlbumDetail(props: any) {
     }
   }, [paused, albumDetail]);
 
-  const handlePlayCurrentPlaylist = () => {
-    if (!albumDetail) {
-      return;
-    }
-
-    if (paused) {
-      spotify.start(
-        { device_id: currentDevice },
-        context.uri === albumDetail.uri && currentTrack
-          ? {
-            context_uri: albumDetail.uri,
-            offset: { uri: currentTrack.uri },
-            position_ms: position,
-          }
-          : { context_uri: albumDetail.uri }
-      );
-    } else {
-      spotify.player.pause();
-    }
-  };
-
   const handleSearchTracks = () => {
     if (runGetAlbumTracksLoading) {
       return;
@@ -148,34 +126,15 @@ function AlbumDetail(props: any) {
     },
   });
 
-  return albumDetail ? 
-    <>
-      <NavBar />
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          alignItems: "flex-end",
-          boxSizing: "border-box",
-        }}
-        className="pl-16 pr-16 pb-24"
-      >
-        <Image
-          alt="cover"
-          className={styles["albumCover"]}
-          src={albumDetail.images?.[0]?.url}
-        />
-        <div style={{ flex: "1" }}>
-          <span className="text-base">
-            {formatMessage({ id: albumDetail.album_type })}
-          </span>
-          <div
-            className="text-xxl text-base text-bold"
-            style={{ fontSize: "2rem" }}
-          >
-            {albumDetail.name}
-          </div>
-          <div className="inline-flex" style={{ alignItems: "baseline" }}>
+  return (
+    <ContentContainer
+      initialLoading={loading}
+      type="album"
+      tag={albumDetail?.album_type ?? "album"}
+      title={albumDetail?.name}
+      extra={
+        albumDetail && 
+          <>
             <Join type="dot">
               {albumDetail.artists.map((artist) => 
                 <Link
@@ -200,94 +159,90 @@ function AlbumDetail(props: any) {
             </Join>
             ,&nbsp;
             <span>{duration}</span>
-          </div>
-        </div>
-      </div>
-      <div
-        style={{ height: "104px", boxSizing: "border-box" }}
-        className="flex p-24"
-      >
-        <PlayButton
-          size={56}
-          className="mr-32"
-          isPlaying={!paused && context.uri === albumDetail.uri}
-          onClick={handlePlayCurrentPlaylist}
-        />
-        {user && albumDetail && <SaveAlbum id={id} className="mr-24" />}
-        <PlaylistMenu id={id} />
-      </div>
-      <div className="pl-16 pr-16 pb-32">
-        <Table<TrackObject>
-          gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
-          colcount={3}
-          total={albumDetail.tracks.total}
-          next={handleSearchTracks}
-          dataSource={tracks}
-          columns={columns}
-          rowKey="id"
-          enabledKey="is_playable"
-          onRow={handleOnRow}
-          rowSelection={rowSelected}
-        />
-        <div className="mt-32">
-          <div className="text-s">
-            {dayjs(albumDetail.release_date).format(
-              formatMessage({ id: "date-format" })
-            )}
-          </div>
-          {albumDetail.copyrights?.map?.((copyright) => 
-            <p
-              key={copyright.type}
-              style={{ fontSize: "0.6785rem", fontWeight: "400" }}
-            >
-              {copyright.type === "P" &&
-                (copyright.text.startsWith("(P)")
-                  ? copyright.text.replace("(P)", "℗")
-                  : "℗ " + copyright.text)}
-              {copyright.type === "C" &&
-                (copyright.text.startsWith("(C)")
-                  ? copyright.text.replace("(C)", "©")
-                  : "© " + copyright.text)}
-              {copyright.type === "R" &&
-                (copyright.text.startsWith("(R)")
-                  ? copyright.text.replace("(R)", "®")
-                  : "® " + copyright.text)}
-            </p>
-          )}
-        </div>
-        {!!relatedAlbums?.items?.length && 
-          <div>
-            <h2 className="text-base">
-              {format(
-                formatMessage({ id: "album-page.more-by-artist" }),
-                albumDetail.artists[0].name
-              )}
-            </h2>
-            <div
-              className={"grid " + styles["albumRelated"]}
-              style={{
-                gridTemplateColumns: "repeat(var(--col-count),minmax(0,1fr))",
-                gridTemplateRows: "1fr",
-                gridAutoRows: "0",
-              }}
-            >
-              {relatedAlbums.items.slice(0, colcount).map((album) => 
-                <AlbumCard
-                  key={album.id}
-                  id={album.id}
-                  media={album.images[0].url}
-                  name={album.name}
-                  yearOrArtists={dayjs(albumDetail.release_date).year()}
-                />
+          </>
+        
+      }
+      cover={albumDetail?.images?.[0]?.url}
+      contextUri={`spotify:album:${id}`}
+      operationExtra={
+        <>
+          {user && albumDetail && <SaveAlbum id={id} className="mr-24" />}
+          <PlaylistMenu id={id} />
+        </>
+      }
+    >
+      {albumDetail && 
+        <>
+          <Table<TrackObject>
+            gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
+            colcount={3}
+            total={albumDetail.tracks.total}
+            next={handleSearchTracks}
+            dataSource={tracks}
+            columns={columns}
+            rowKey="id"
+            enabledKey="is_playable"
+            onRow={handleOnRow}
+            rowSelection={rowSelected}
+          />
+          <div className="mt-32">
+            <div className="text-s">
+              {dayjs(albumDetail.release_date).format(
+                formatMessage({ id: "date-format" })
               )}
             </div>
+            {albumDetail.copyrights?.map?.((copyright) => 
+              <p
+                key={copyright.type}
+                style={{ fontSize: "0.6785rem", fontWeight: "400" }}
+              >
+                {copyright.type === "P" &&
+                  (copyright.text.startsWith("(P)")
+                    ? copyright.text.replace("(P)", "℗")
+                    : "℗ " + copyright.text)}
+                {copyright.type === "C" &&
+                  (copyright.text.startsWith("(C)")
+                    ? copyright.text.replace("(C)", "©")
+                    : "© " + copyright.text)}
+                {copyright.type === "R" &&
+                  (copyright.text.startsWith("(R)")
+                    ? copyright.text.replace("(R)", "®")
+                    : "® " + copyright.text)}
+              </p>
+            )}
           </div>
-        }
-      </div>
-    </>
-    : 
-    <div className={className}>Loading</div>
-  ;
+          {!!relatedAlbums?.items?.length && 
+            <div>
+              <h2 className="text-base">
+                {format(
+                  formatMessage({ id: "album-page.more-by-artist" }),
+                  albumDetail.artists[0].name
+                )}
+              </h2>
+              <div
+                className={"grid " + styles["albumRelated"]}
+                style={{
+                  gridTemplateColumns: "repeat(var(--col-count),minmax(0,1fr))",
+                  gridTemplateRows: "1fr",
+                  gridAutoRows: "0",
+                }}
+              >
+                {relatedAlbums.items.slice(0, colcount).map((album) => 
+                  <AlbumCard
+                    key={album.id}
+                    id={album.id}
+                    media={album.images[0].url}
+                    name={album.name}
+                    yearOrArtists={dayjs(albumDetail.release_date).year()}
+                  />
+                )}
+              </div>
+            </div>
+          }
+        </>
+      }
+    </ContentContainer>
+  );
 }
 
 export default AlbumDetail;
