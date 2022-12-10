@@ -1,48 +1,59 @@
 import classnames from "classnames";
-import React, { HTMLAttributes, ReactElement, TdHTMLAttributes } from "react";
+import React, {
+  HTMLAttributes,
+  ReactElement,
+  ReactNode,
+  TdHTMLAttributes,
+} from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 import { getValueWithKeys } from "@utils/index";
 
 import styles from "./index.module.less";
 
+import { CommonProps } from "../../type";
+
 export interface ColumnProp<RowType> {
   dataIndex: string;
-  title: string;
-  align?: "left" | "right" | "center" | "justify" | "char";
+  title: ReactNode;
+  align?: "left" | "right";
   width?: number | string;
-  visible?: boolean;
-  render: (t: any, r?: RowType, index?: number) => ReactElement;
+  visible: boolean | ((colcount: number) => boolean);
+  render: (t: any, r: RowType, index: number) => ReactElement;
 }
 
-interface TableProps<RowType> {
-  className?: string;
+interface TableProps<RowType> extends CommonProps {
+  showHeader?: boolean;
   dataSource: RowType[];
+  colcount: number;
   columns: ColumnProp<RowType>[];
   onRow?: (
     row: RowType,
-    index?: number
+    index: number
   ) => HTMLAttributes<any> | TdHTMLAttributes<any>;
-  rowKey: string | string[];
+  rowKey: string | string[] | ((r: RowType, index: number) => string);
   rowSelection?: number[] | number;
-  colcount: number;
-  disabledKey?: string | string[];
+  enabledKey?: string | string[];
   total: number;
   next: () => void;
+  gridTemplateColumns: string | { [colcount: number]: string };
 }
 
-function Table<RowType = { [k: string]: any }>(props: TableProps<RowType>) {
+function Table<RowType>(props: TableProps<RowType>) {
   const {
+    showHeader = true,
     className = "",
+    style,
     dataSource = [],
     columns = [],
+    colcount,
     onRow = () => ({}),
     rowKey,
     rowSelection,
-    colcount,
-    disabledKey,
+    enabledKey,
     total,
     next,
+    gridTemplateColumns,
   } = props;
 
   return (
@@ -51,25 +62,41 @@ function Table<RowType = { [k: string]: any }>(props: TableProps<RowType>) {
       role="grid"
       aria-colcount={colcount}
     >
-      <div className={styles["table__thead"]} role="presentation">
-        <div className={styles["table__row"]} role="row" aria-rowindex="1">
-          {columns.map((col, colIndex) => 
-            <div
-              role="columnheader"
-              key={col.title}
-              aria-colindex={colIndex + 1}
-              className={classnames({
-                [styles["table__cell"]]: true,
-                [`text-align-${col.align ?? "left"}`]: true,
-                [styles["table__cell-can-hidden"]]: [2, 3].includes(colIndex),
-              })}
-              style={col.width ? { width: col.width } : { maxWidth: "100%" }}
-            >
-              {col.title}
-            </div>
-          )}
+      {showHeader && 
+        <div className={styles["table__thead"]} role="presentation">
+          <div
+            className={styles["table__row"]}
+            role="row"
+            aria-rowindex="1"
+            style={{
+              gridTemplateColumns:
+                typeof gridTemplateColumns === "string"
+                  ? gridTemplateColumns
+                  : gridTemplateColumns[colcount],
+              ...style,
+            }}
+          >
+            {columns.map((col, colIndex) => 
+              <div
+                role="columnheader"
+                key={col.dataIndex + colIndex}
+                aria-colindex={colIndex + 1}
+                className={classnames({
+                  [styles["table__cell"]]: true,
+                  [styles[col.align ?? "left"]]: true,
+                  [styles["table__cell-can-hidden"]]: !(typeof col.visible ===
+                  "function"
+                    ? col.visible(colcount)
+                    : col.visible),
+                })}
+                style={col.width ? { width: col.width } : { maxWidth: "100%" }}
+              >
+                {col.title}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      }
       <div role="presentation">
         <InfiniteScroll
           next={next}
@@ -78,49 +105,72 @@ function Table<RowType = { [k: string]: any }>(props: TableProps<RowType>) {
           dataLength={dataSource?.length}
           hasMore={dataSource?.length < total}
         >
-          {dataSource?.map?.((item, index) => 
-            <div
-              draggable
-              role="row"
-              {...onRow(item, index)}
-              aria-rowindex={index + 2}
-              key={getValueWithKeys(item, rowKey)}
-              aria-selected={
-                Array.isArray(rowSelection) && rowSelection.includes(index) ||
-                rowSelection === index
-              }
-              className={classnames({
-                [styles["table__rowDisabled"]]: !getValueWithKeys(
-                  item,
-                  disabledKey
-                ),
-                [styles["table__row"]]: true,
-                [styles["table__row-selected"]]:
-                  Array.isArray(rowSelection) &&
-                    rowSelection.includes(index) ||
-                  rowSelection === index,
-              })}
-            >
-              {columns.map((col, colIndex) => 
+          {dataSource?.map?.((item, index) => {
+            try {
+              return (
                 <div
-                  role="gridcell"
-                  aria-colindex={colIndex + 1}
-                  key={getValueWithKeys(item, rowKey) + colIndex}
-                  className={classnames({
-                    [styles["table__cell"]]: true,
-                    [styles["table__cell-can-hidden"]]: [2, 3].includes(
-                      colIndex
-                    ),
-                  })}
-                  style={
-                    col.width ? { width: col.width } : { maxWidth: "100%" }
+                  draggable
+                  role="row"
+                  {...onRow(item, index)}
+                  aria-rowindex={index + 2}
+                  key={
+                    typeof rowKey === "function"
+                      ? rowKey(item, index)
+                      : getValueWithKeys(item, rowKey)
                   }
+                  aria-selected={
+                    Array.isArray(rowSelection) &&
+                      rowSelection.includes(index) ||
+                    rowSelection === index
+                  }
+                  aria-disabled={
+                    enabledKey && !getValueWithKeys(item, enabledKey)
+                  }
+                  className={classnames({
+                    [styles["table__row"]]: true,
+                    [styles["table__row-selected"]]:
+                      Array.isArray(rowSelection) &&
+                        rowSelection.includes(index) ||
+                      rowSelection === index,
+                  })}
+                  style={{
+                    gridTemplateColumns:
+                      typeof gridTemplateColumns === "string"
+                        ? gridTemplateColumns
+                        : gridTemplateColumns[colcount],
+                    ...style,
+                  }}
                 >
-                  {col.render(item[col.dataIndex], item, index)}
+                  {columns.map((col, colIndex) => 
+                    <div
+                      role="gridcell"
+                      aria-colindex={colIndex + 1}
+                      key={
+                        (typeof rowKey === "function"
+                          ? rowKey(item, index)
+                          : getValueWithKeys(item, rowKey)) + colIndex
+                      }
+                      className={classnames({
+                        [styles["table__cell"]]: true,
+                        [styles[col.align ?? "left"]]: true,
+                        [styles["table__cell-can-hidden"]]:
+                          !(typeof col.visible === "function"
+                            ? col.visible(colcount)
+                            : col.visible),
+                      })}
+                      style={
+                        col.width ? { width: col.width } : { maxWidth: "100%" }
+                      }
+                    >
+                      {col.render(item[col.dataIndex], item, index)}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              );
+            } catch (e) {
+              return null;
+            }
+          })}
         </InfiniteScroll>
       </div>
     </div>
