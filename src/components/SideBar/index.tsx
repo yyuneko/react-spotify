@@ -1,8 +1,10 @@
 import { useRequest } from "ahooks";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import { useIntl } from "react-intl";
+import { useSelector } from "react-redux";
 import { useLocation } from "react-router";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Add from "@assets/icons/add.svg";
 import CollectionFill from "@assets/icons/collection-fill.svg";
@@ -11,17 +13,68 @@ import Favorite from "@assets/icons/favorite.svg";
 import HomeFill from "@assets/icons/home-fill.svg";
 import Home from "@assets/icons/home.svg";
 import Logo from "@assets/icons/logo.svg";
+import PlayingGreenIcon from "@assets/icons/playing-green.svg";
 import SearchFill from "@assets/icons/search-fill.svg";
 import Search from "@assets/icons/search.svg";
 import NavLink from "@components/NavLink";
-import { getAListOfCurrentUsersPlaylists } from "@service/playlists";
+import {
+  createPlaylist,
+  getAListOfCurrentUsersPlaylists,
+} from "@service/playlists";
+import { SimplifiedPlaylistObject } from "@service/playlists/types";
+import { state } from "@store/index";
+import { format, useCurrentUser } from "@utils/index";
 
 import "./index.less";
 
 function SideBar({ className }: { className?: string }) {
   const { formatMessage } = useIntl();
+  const navigate = useNavigate();
   const location = useLocation();
-  const { data } = useRequest(getAListOfCurrentUsersPlaylists);
+  const user = useCurrentUser();
+  const [playlists, setPlaylists] = useState<SimplifiedPlaylistObject[]>([]);
+  const { data, run, loading } = useRequest(getAListOfCurrentUsersPlaylists, {
+    manual: true,
+    onSuccess: (res) => {
+      setPlaylists(playlists.concat(res.items));
+    },
+  });
+  const context = useSelector<
+    state,
+    { type?: string; id?: string; uri?: string }
+  >((state) => state.player.context);
+
+  useEffect(() => {
+    user && run({ limit: 20 });
+  }, [user]);
+
+  const handleCreateNewPlaylist = () => {
+    if (!user) {
+      return;
+    }
+
+    const playlistCountCreatedByCurrentUser =
+      data?.items?.filter?.((playlist) => playlist.owner.id === user.id)
+        ?.length ?? 0;
+    createPlaylist(user.id, {
+      name: format(
+        formatMessage({ id: "playlist.new-default-name" }),
+        playlistCountCreatedByCurrentUser + 1
+      ),
+    }).then((res) => {
+      setPlaylists([]);
+      run();
+      navigate(`/playlist/${res.id}`);
+    });
+  };
+
+  const handleGetPlaylists = () => {
+    if (loading) {
+      return;
+    }
+
+    user && run({ limit: 20, offset: playlists.length });
+  };
 
   return (
     <div
@@ -60,9 +113,12 @@ function SideBar({ className }: { className?: string }) {
         </li>
         <li>
           <NavLink
-            to="/collection"
+            to="/collection/playlists"
             prefix={[<Collection />, <CollectionFill />]}
-            isMatched={location.pathname.startsWith("/collection")}
+            isMatched={
+              location.pathname != "/collection/tracks" &&
+              location.pathname.startsWith("/collection")
+            }
           >
             {formatMessage({ id: "navbar.your-library" })}
           </NavLink>
@@ -78,6 +134,8 @@ function SideBar({ className }: { className?: string }) {
         }}
       >
         <NavLink
+          role="button"
+          className="pt-8 pb-8"
           prefix={[
             <div
               style={{
@@ -94,10 +152,12 @@ function SideBar({ className }: { className?: string }) {
             </div>,
             undefined,
           ]}
+          onClick={handleCreateNewPlaylist}
         >
           {formatMessage({ id: "sidebar.playlist_create" })}
         </NavLink>
         <NavLink
+          className="pt-8 pb-8"
           to="/collection/tracks"
           prefix={[<Favorite />, <Favorite />]}
           isMatched={location.pathname === "/collection/tracks"}
@@ -112,7 +172,9 @@ function SideBar({ className }: { className?: string }) {
             border: "none",
           }}
         />
+
         <ul
+          id="sidebar-playlists"
           className="scrollbar"
           style={{
             listStyle: "none",
@@ -122,16 +184,26 @@ function SideBar({ className }: { className?: string }) {
             overflowY: "scroll",
           }}
         >
-          {data?.items?.map?.((item) => 
-            <li key={item.id}>
-              <NavLink
-                to={`/playlist/${item.id}`}
-                isMatched={location.pathname === `/playlist/${item.id}`}
-              >
-                {item.name}
-              </NavLink>
-            </li>
-          )}
+          <InfiniteScroll
+            next={handleGetPlaylists}
+            hasMore={playlists.length < (data?.total ?? 1)}
+            loader={"Loading"}
+            dataLength={playlists.length}
+            scrollableTarget="sidebar-playlists"
+          >
+            {data?.items?.map?.((item) => 
+              <li key={item.id}>
+                <NavLink
+                  className="w-1-1"
+                  to={`/playlist/${item.id}`}
+                  isMatched={location.pathname === `/playlist/${item.id}`}
+                  suffix={context.uri === item.uri && <PlayingGreenIcon />}
+                >
+                  {item.name}
+                </NavLink>
+              </li>
+            )}
+          </InfiniteScroll>
         </ul>
       </div>
     </div>
