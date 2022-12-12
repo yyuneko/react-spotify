@@ -5,6 +5,11 @@ import React, { useEffect } from "react";
 import HeartFill from "@assets/icons/heart-fill.svg";
 import Heart from "@assets/icons/heart.svg";
 import {
+  checkUsersSavedAlbums,
+  removeAlbumsUser,
+  saveAlbumsUser,
+} from "@service/albums";
+import {
   checkIfUserFollowsPlaylist,
   followPlaylist,
   unfollowPlaylist,
@@ -81,4 +86,41 @@ export function FollowPlaylist(props: any) {
       className={className}
     />
   );
+}
+
+export function SaveAlbum(props: any) {
+  const { id } = props;
+  const { data: isSavingAlbum, run: checkIsSavingAlbum } = useRequest(
+    checkUsersSavedAlbums,
+    { manual: true }
+  );
+  const { run: runSaveAlbum } = useRequest(saveAlbumsUser, {
+    manual: true,
+    onSuccess: () => {
+      id && checkIsSavingAlbum({ ids: id });
+    },
+  });
+  const { run: runRemoveAlbum } = useRequest(removeAlbumsUser, {
+    manual: true,
+    onSuccess: () => {
+      id && checkIsSavingAlbum({ ids: id });
+    },
+  });
+  useEffect(() => {
+    if (id) {
+      checkIsSavingAlbum({ ids: id });
+    }
+  }, [id]);
+
+  const onChange = () => {
+    if (id) {
+      if (isSavingAlbum?.[0]) {
+        runRemoveAlbum({ ids: id });
+      } else {
+        runSaveAlbum({ ids: id });
+      }
+    }
+  };
+
+  return <Follow size={32} followed={isSavingAlbum?.[0]} onClick={onChange} />;
 }
