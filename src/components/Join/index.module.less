@@ -1,7 +1,7 @@
 .join {
   &-dot {
-    display: inline-flex;
-
+    display: flex;
+    align-items: baseline;
     > *:not(:first-child)::before {
       content: "•";
       color: #fff;
@@ -10,11 +10,24 @@
   }
 
   &-comma {
-    display: inline-flex;
+    display: flex;
+    align-items: baseline;
     > *:not(:first-child)::before {
       content: ",";
       color: #fff;
       margin: 0 4px;
+    }
+  }
+  &-dot,
+  &-comma {
+    &.ellipsis {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      > * {
+        display: inline;
+      }
     }
   }
 }

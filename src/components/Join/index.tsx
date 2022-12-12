@@ -1,14 +1,30 @@
+import classnames from "classnames";
 import React from "react";
+
 import styles from "./index.module.less";
 
-function Join(props: any) {
-  const { children, type = "comma" } = props;
+import { CommonProps } from "../../type";
+
+interface Props extends CommonProps {
+  type?: "comma" | "dot";
+  ellipsis?: boolean;
+}
+
+function Join(props: Props) {
+  const { children, type = "comma", ellipsis = true, ...otherProps } = props;
+
   return (
     <div
-      className={type === "comma" ? styles["join-comma"] : styles["join-dot"]}
+      {...otherProps}
+      className={classnames({
+        [styles["join-comma"]]: type === "comma",
+        [styles["join-dot"]]: type === "dot",
+        [styles["ellipsis"]]: ellipsis
+      })}
     >
       {children}
     </div>
   );
 }
+
 export default Join;
