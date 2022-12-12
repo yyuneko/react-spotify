@@ -1,5 +1,5 @@
 import classnames from "classnames";
-import React, { MouseEventHandler, ReactNode, useMemo } from "react";
+import React, { ReactNode, useMemo } from "react";
 import { useIntl } from "react-intl";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -8,12 +8,12 @@ import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
 import PlayButton from "@components/PlayButton";
-import { AlbumObject } from "@service/albums/types";
+import { SimplifiedAlbumObject } from "@service/albums/types";
 import { ArtistObject } from "@service/artists/types";
 import { PlaylistObject } from "@service/playlists/types";
 import { TrackObject } from "@service/tracks/types";
 import { state } from "@store/index";
-import { useSpotifyPlayer } from "@utils/player";
+import { usePlayContext } from "@utils/index";
 
 import styles from "./index.module.less";
 
@@ -39,16 +39,8 @@ export function Card(props: CardProps) {
     onClick,
     contextUri,
   } = props;
-  const spotify = useSpotifyPlayer();
-  const currentDevice = useSelector<state, string | undefined>(
-    (state) => state.player.device.current
-  );
-  const localDevice = useSelector<state, string | undefined>(
-    (state) => state.player.device.local
-  );
-  const position = useSelector<state, number>((state) => state.player.position);
   const paused = useSelector<state, boolean>((state) => state.player.paused);
-  const currentTrack = useSelector<state, TrackObject | undefined>(
+  useSelector<state, TrackObject | undefined>(
     (state) => state.player.trackWindow.currentTrack
   );
   const context = useSelector<
@@ -56,38 +48,7 @@ export function Card(props: CardProps) {
     { type?: string; id?: string; uri?: string }
   >((state) => state.player.context);
 
-  const handlePlayCurrentPlaylist: MouseEventHandler<HTMLButtonElement> = (
-    e
-  ) => {
-    if (!contextUri) {
-      return;
-    }
-
-    if (context.uri === contextUri) {
-      if (paused) {
-        if (currentDevice != localDevice) {
-          spotify.start(
-            { device_id: currentDevice },
-            currentTrack && ["playlist", "album"].includes(context.type!)
-              ? {
-                context_uri: contextUri,
-                offset: { uri: currentTrack?.uri },
-                position_ms: position,
-              }
-              : { context_uri: contextUri }
-          );
-        } else {
-          spotify.player.resume();
-        }
-      } else {
-        spotify.player.pause();
-      }
-    } else {
-      spotify.start({ device_id: currentDevice }, { context_uri: contextUri });
-    }
-
-    e.stopPropagation();
-  };
+  const handlePlayCurrentPlaylist = usePlayContext({ uri: contextUri });
 
   return (
     <div
@@ -120,7 +81,10 @@ export function Card(props: CardProps) {
             <PlayButton
               size={48}
               isPlaying={!paused && context.uri === contextUri}
-              onClick={handlePlayCurrentPlaylist}
+              onClick={(e) => {
+                handlePlayCurrentPlaylist();
+                e.stopPropagation();
+              }}
             />
           </div>
         }
@@ -139,7 +103,10 @@ export function Card(props: CardProps) {
           <PlayButton
             size={48}
             isPlaying={!paused && context.uri === contextUri}
-            onClick={handlePlayCurrentPlaylist}
+            onClick={(e) => {
+              handlePlayCurrentPlaylist();
+              e.stopPropagation();
+            }}
           />
         </div>
       }
@@ -223,7 +190,7 @@ export function ArtistCard(props: Partial<ArtistCardProps>) {
 export type SearchResultProps =
   | {
       type: "album";
-      value: AlbumObject;
+      value: SimplifiedAlbumObject;
     }
   | {
       type: "track";
@@ -241,18 +208,8 @@ export type SearchResultProps =
 export function PopularSearchResultCard(props: SearchResultProps) {
   const { type, value } = props;
   const { formatMessage } = useIntl();
-  const spotify = useSpotifyPlayer();
-  const currentDevice = useSelector<state, string | undefined>(
-    (state) => state.player.device.current
-  );
-  const localDevice = useSelector<state, string | undefined>(
-    (state) => state.player.device.local
-  );
-  const position = useSelector<state, number>((state) => state.player.position);
+  const navigate = useNavigate();
   const paused = useSelector<state, boolean>((state) => state.player.paused);
-  const currentTrack = useSelector<state, TrackObject | undefined>(
-    (state) => state.player.trackWindow.currentTrack
-  );
   const context = useSelector<
     state,
     { type?: string; id?: string; uri?: string }
@@ -261,53 +218,26 @@ export function PopularSearchResultCard(props: SearchResultProps) {
   const image = useMemo(() => {
     switch (type) {
     case "album":
-      return value.images[0].url;
+      return value.images[0]?.url;
     case "track":
       return value.album.images[0].url;
     case "artist":
-      return value.images[0].url;
+      return value.images[0]?.url;
     case "playlist":
-      return value.images[0].url;
+      return value.images[0]?.url;
     }
   }, [type, value]);
 
-  const handlePlayCurrentContext: MouseEventHandler<HTMLButtonElement> = (
-    e
-  ) => {
-    if (context.uri === value.uri) {
-      if (paused) {
-        if (currentDevice != localDevice) {
-          spotify.start(
-            { device_id: currentDevice },
-            currentTrack && ["playlist", "album"].includes(context.type!)
-              ? {
-                context_uri: value.uri,
-                offset: { uri: currentTrack?.uri },
-                position_ms: position,
-              }
-              : { context_uri: value.uri }
-          );
-        } else {
-          spotify.player.resume();
-        }
-      } else {
-        spotify.player.pause();
-      }
-    } else {
-      if (value.type === "track") {
-        spotify.start({ device_id: currentDevice }, { uris: [value.uri] });
-      } else {
-        spotify.start({ device_id: currentDevice }, { context_uri: value.uri });
-      }
-    }
-
-    e.stopPropagation();
-  };
+  const handlePlayCurrentContext = usePlayContext({
+    uri: value.uri,
+    type: type === "track" ? "track" : "context",
+  });
 
   return (
     <div
       className={styles["card"] + " p-20"}
       style={{ flexDirection: "column", gap: "20px", position: "relative" }}
+      onClick={() => navigate(`/${type}/${value.id}`)}
     >
       <div
         className={styles["card__media"]}
@@ -359,7 +289,10 @@ export function PopularSearchResultCard(props: SearchResultProps) {
         <PlayButton
           size={48}
           isPlaying={!paused && context.uri === value.uri}
-          onClick={handlePlayCurrentContext}
+          onClick={(e) => {
+            handlePlayCurrentContext();
+            e.stopPropagation();
+          }}
         />
       </div>
     </div>
