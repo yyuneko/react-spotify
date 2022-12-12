@@ -1,9 +1,24 @@
 .nav-link {
-  display: flex;
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 16px;
   height: 40px;
-  padding: 0 16px;
+  position: relative;
+  > div {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    & + svg {
+      width: 16px;
+      height: 16px;
+      position: absolute;
+      right: 0;
+      fill: var(--icon-highlight);
+    }
+  }
   &:hover {
     text-decoration: none;
     color: var(--text-base);

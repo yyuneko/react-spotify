@@ -10,6 +10,7 @@ import { CommonProps } from "../../type";
 
 interface NavLinkProps extends CommonProps, Omit<LinkProps, "prefix"> {
   prefix?: [ReactNode, ReactNode];
+  suffix?: ReactNode;
   isMatched?: boolean;
 }
 
@@ -18,6 +19,7 @@ function NavLink(props: NavLinkProps) {
     className,
     children,
     prefix,
+    suffix,
     isMatched = false,
     ...otherProps
   } = props;
@@ -25,7 +27,7 @@ function NavLink(props: NavLinkProps) {
   return (
     <Link
       className={
-        (className ?? "") +
+        (className ?? "") + " " +
         classnames({
           [styles["nav-link"]]: true,
           "text-base": isMatched,
@@ -35,7 +37,8 @@ function NavLink(props: NavLinkProps) {
       {...otherProps}
     >
       {prefix?.length === 2 && (isMatched ? prefix[1] : prefix[0])}
-      {children}
+      <div>{children}</div>
+      {suffix}
     </Link>
   );
 }
