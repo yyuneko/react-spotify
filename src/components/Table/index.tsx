@@ -15,7 +15,7 @@ import { CommonProps } from "../../type";
 
 export interface ColumnProp<RowType> {
   dataIndex: string;
-  title: ReactNode;
+  title?: ReactNode;
   align?: "left" | "right";
   width?: number | string;
   visible: boolean | ((colcount: number) => boolean);
@@ -67,7 +67,7 @@ function Table<RowType>(props: TableProps<RowType>) {
           <div
             className={styles["table__row"]}
             role="row"
-            aria-rowindex="1"
+            aria-rowindex={1}
             style={{
               gridTemplateColumns:
                 typeof gridTemplateColumns === "string"
@@ -124,15 +124,9 @@ function Table<RowType>(props: TableProps<RowType>) {
                     rowSelection === index
                   }
                   aria-disabled={
-                    enabledKey && !getValueWithKeys(item, enabledKey)
+                    !!(enabledKey && !getValueWithKeys(item, enabledKey))
                   }
-                  className={classnames({
-                    [styles["table__row"]]: true,
-                    [styles["table__row-selected"]]:
-                      Array.isArray(rowSelection) &&
-                        rowSelection.includes(index) ||
-                      rowSelection === index,
-                  })}
+                  className={styles["table__row"]}
                   style={{
                     gridTemplateColumns:
                       typeof gridTemplateColumns === "string"
