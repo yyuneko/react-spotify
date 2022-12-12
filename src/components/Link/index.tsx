@@ -1,19 +1,26 @@
 import React from "react";
-import { Link as RouterLink } from "react-router-dom";
-import styles from "./index.module.less";
+import { Link as RouterLink, LinkProps } from "react-router-dom";
 
-function Link(props: any) {
-  const { children, className, ...otherProps } = props;
+import "./index.less";
+import { CommonProps } from "../../type";
+
+interface Props extends CommonProps, LinkProps {
+  ellipsis?: boolean;
+}
+
+function Link(props: Props) {
+  const { children, className, to, ...otherProps } = props;
+
   return (
     <RouterLink
+      to={to}
       {...otherProps}
-      className={
-        styles["link"] + " text-overflow-ellipsis " + (className ?? "")
-      }
-      title={children}
+      className={"link " + (className ?? "")}
+      data-title={children}
     >
       {children}
     </RouterLink>
   );
 }
+
 export default Link;
