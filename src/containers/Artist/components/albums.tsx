@@ -28,7 +28,7 @@ export default function Albums(props: { items: SimplifiedAlbumObject[] }) {
             <div>
               <span>{dayjs(album.release_date).year()}</span>
               {" • "}
-              <span>{formatMessage({ id: album.type })}</span>
+              <span>{formatMessage({ id: album.album_group })}</span>
             </div>
           }
         />
