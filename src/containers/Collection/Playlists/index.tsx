@@ -10,16 +10,11 @@ import Join from "@components/Join";
 import Loading from "@components/Loading";
 import PlayButton from "@components/PlayButton";
 import { getAListOfCurrentUsersPlaylists } from "@service/playlists";
-import {
-  PlaylistTrackObject,
-  SimplifiedPlaylistObject,
-} from "@service/playlists/types";
+import { PlaylistTrackObject, SimplifiedPlaylistObject } from "@service/playlists/types";
 import { getUsersSavedTracks } from "@service/tracks";
-import { TrackObject } from "@service/tracks/types";
 import { PagingObject } from "@service/types";
 import { state } from "@store/index";
-import { format, useCurrentUser } from "@utils/index";
-import { useSpotifyPlayer } from "@utils/player";
+import { format, useCurrentUser, usePlayContext } from "@utils/index";
 
 function LikedSongsCard(props: {
   likedSongs?: PagingObject<PlaylistTrackObject>;
@@ -27,41 +22,18 @@ function LikedSongsCard(props: {
   const { likedSongs } = props;
   const user = useCurrentUser();
   const { formatMessage } = useIntl();
-  const spotify = useSpotifyPlayer();
   const navigate = useNavigate();
-  const position = useSelector<state, number>((state) => state.player.position);
   const paused = useSelector<state, boolean>((state) => state.player.paused);
-  const currentTrack = useSelector<state, TrackObject | undefined>(
-    (state) => state.player.trackWindow.currentTrack
-  );
   const context = useSelector<
     state,
     { type?: string; id?: string; uri?: string }
   >((state) => state.player.context);
-  const currentDevice = useSelector<state, string | undefined>(
+  useSelector<state, string | undefined>(
     (state) => state.player.device.current
   );
-
-  const handlePlayCurrentPlaylist = () => {
-    if (!currentDevice) {
-      return;
-    }
-
-    if (paused) {
-      spotify.start(
-        { device_id: currentDevice },
-        context.uri === `spotify:user:${user?.id}:collection`
-          ? {
-            context_uri: `spotify:user:${user?.id}:collection`,
-            offset: { uri: currentTrack?.uri },
-            position_ms: position,
-          }
-          : { context_uri: `spotify:user:${user?.id}:collection` }
-      );
-    } else {
-      spotify.player.pause();
-    }
-  };
+  const handlePlayCurrentPlaylist = usePlayContext({
+    uri: `spotify:user:${user?.id}:collection`,
+  });
 
   return (
     <div
@@ -127,7 +99,7 @@ export default function Playlists() {
   const [total, setTotal] = useState(0);
   const [initialLoading, setInitialLoading] = useState(true);
   const [playlists, setPlaylists] = useState<SimplifiedPlaylistObject[]>([]);
-  const { run: runGetPlaylists} = useRequest(
+  const { run: runGetPlaylists } = useRequest(
     getAListOfCurrentUsersPlaylists,
     {
       manual: true,
