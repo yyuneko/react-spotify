@@ -4,7 +4,8 @@ import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { getLyrics } from "@service/tracks";
-import { PlayerState, setPosition } from "@store/player/reducer";
+import { TrackObject } from "@service/tracks/types";
+import { setPosition } from "@store/player/reducer";
 import { useSpotifyPlayer } from "@utils/player";
 
 import styles from "./index.module.less";
@@ -19,10 +20,10 @@ export default function Lyrics() {
   const position = useSelector<state,number>(state => state.player.position);
   const spotify = useSpotifyPlayer();
   const lineRef = useRef([]);
-  const {
-    duration,
-    trackWindow: { currentTrack },
-  } = useSelector<state, PlayerState>((state) => state.player);
+  const duration = useSelector<state, number>((state) => state.player.duration);
+  const currentTrack = useSelector<state, TrackObject | undefined>(
+    (state) => state.player.trackWindow.currentTrack
+  );
   const { data: lyrics, run: runGetLyrics } = useRequest(getLyrics, {
     manual: true,
     onSuccess: res => {
