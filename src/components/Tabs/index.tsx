@@ -6,27 +6,27 @@ import styles from "./index.module.less";
 import { CommonProps } from "../../type";
 
 interface TabProps extends CommonProps {
-  to: string;
+  to?: string;
   onClick?: () => void;
 }
 
 function Tab(props: TabProps) {
-  const { to, children, onClick,style } = props;
+  const { to, children, onClick, style } = props;
 
   return (
-    <div className={styles["pill"]} onClick={onClick} style={style}>
-      <Link to={to}>{children}</Link>
+    <div className={styles["pill"] + " text-s"} onClick={onClick} style={style}>
+      {to ? <Link to={to}>{children}</Link> : <span>{children}</span>}
     </div>
   );
 }
 
-interface TabsProps extends CommonProps {
+export interface TabsProps extends CommonProps {
   defaultActiveKey?: string;
   items: {
     label: string;
     key: string;
     children?: ReactNode;
-    to: string;
+    to?: string;
   }[];
   onChange?: (key: string) => void;
 }
