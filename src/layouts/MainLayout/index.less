@@ -1,10 +1,23 @@
-.main {
-	display: flex;
-	width: 100%;
-	div:first-child {
-		flex: 1;
-	}
-	div:last-child {
-		flex: 3;
-	}
+#app {
+  height: 100vh;
+  display: grid;
+  grid-template-areas:
+    "sidebar main"
+    "footer footer";
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 1fr 90px;
+  &__main {
+    grid-area: main;
+    overflow-y: scroll;
+  }
+  &__sidebar {
+    grid-area: sidebar;
+    background-color: var(--black);
+    overflow: hidden;
+  }
+
+  &__controller-bar {
+    box-sizing: border-box;
+    grid-area: footer;
+  }
 }
