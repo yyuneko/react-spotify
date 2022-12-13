@@ -145,7 +145,7 @@ export default function SearchAll(props: SearchTabProps) {
                 <AlbumCard
                   key={album.id}
                   id={album.id}
-                  media={album.images[0].url}
+                  media={album.images[0]?.url}
                   name={album.name}
                   yearOrArtists={
                     <div
@@ -186,7 +186,7 @@ export default function SearchAll(props: SearchTabProps) {
                 <PlaylistCard
                   key={playlist.id}
                   id={playlist.id}
-                  media={playlist.images[0].url}
+                  media={playlist.images[0]?.url}
                   name={playlist.name}
                   owner={playlist.owner.display_name ?? playlist.owner.id}
                 />

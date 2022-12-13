@@ -74,7 +74,7 @@ export default function SearchPlaylists(props: SearchTabProps) {
             <PlaylistCard
               key={playlist.id}
               id={playlist.id}
-              media={playlist.images[0].url}
+              media={playlist.images[0]?.url}
               name={playlist.name}
               owner={playlist.owner.display_name ?? playlist.owner.id}
             />

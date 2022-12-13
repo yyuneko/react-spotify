@@ -72,7 +72,7 @@ export default function SearchAlbums(props: SearchTabProps) {
             <AlbumCard
               key={album.id}
               id={album.id}
-              media={album.images[0].url}
+              media={album.images[0]?.url}
               name={album.name}
               yearOrArtists={
                 <div>
