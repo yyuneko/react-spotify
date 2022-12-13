@@ -8,15 +8,15 @@ import ContentContainer from "@components/ContentContainer";
 import { FollowPlaylist } from "@components/Follow";
 import Join from "@components/Join";
 import Link from "@components/Link";
+import Loading from "@components/Loading";
 import { PlaylistMenu } from "@components/Menu";
 import Table from "@components/Table";
-import Extender from "@containers/PlayListDetail/components/Extender";
-import {
-  addTracksToPlaylist,
-  getPlaylist,
-  getPlaylistsTracks,
-} from "@service/playlists";
+import MixedList from "@containers/PlayListDetail/components/MixedList";
+import Search from "@containers/PlayListDetail/components/Search";
+import { getRecentlyPlayed } from "@service/player";
+import { addTracksToPlaylist, getPlaylist, getPlaylistsTracks } from "@service/playlists";
 import { PlaylistTrackObject } from "@service/playlists/types";
+import { getRecommendations } from "@service/tracks";
 import { TrackObject } from "@service/tracks/types";
 import { state } from "@store/index";
 import { setTitle } from "@store/ui/reducer";
@@ -30,6 +30,10 @@ function PlayListDetail() {
   const spotify = useSpotifyPlayer();
   const dispatch = useDispatch();
   const { formatMessage } = useIntl();
+  const [total, setTotal] = useState(0);
+  const [extenderMode, setExtenderMode] = useState<"search" | "recommendation">(
+    "search"
+  );
   const [rowSelected, setRowSelected] = useState<number | undefined>();
   const colcount = useSelector<state, number>((state) => state.ui.colcount);
   const [tracks, setTracks] = useState<PlaylistTrackObject[]>([]);
@@ -54,6 +58,8 @@ function PlayListDetail() {
   } = useRequest(getPlaylist, {
     manual: true,
     onSuccess: (res) => {
+      setTotal(res.tracks.total);
+      setExtenderMode(res.tracks.total > 0 ? "recommendation" : "search");
       res && setTracks(res.tracks.items);
     },
   });
@@ -66,6 +72,7 @@ function PlayListDetail() {
     useRequest(getPlaylistsTracks, {
       manual: true,
       onSuccess: (res) => {
+        setTotal(res.total);
         res && setTracks(tracks.concat(res.items));
       },
     });
@@ -77,13 +84,34 @@ function PlayListDetail() {
       }
 
       id &&
-        runGetPlaylistTracks(id, {
-          offset: tracks.length,
-          limit: 20,
-          additional_types: "track",
-        });
+      runGetPlaylistTracks(id, {
+        offset: tracks.length,
+        limit: 20,
+        additional_types: "track",
+      });
     },
   });
+  const {
+    data: recommendationTracks,
+    run: runGetRecommendationTracks,
+    loading: runGetRecommendationTracksLoading,
+  } = useRequest(getRecommendations, { manual: true });
+
+  const randomPick = (array: any[], count = 5) => {
+    if (array.length <= count) {
+      return array;
+    }
+
+    const result = [];
+
+    for (let i = 0; i < count; ++i) {
+      const idx = Math.floor(Math.random() * array.length);
+      result.push(array[idx]);
+    }
+
+    return result;
+  };
+
   const followersCount = useMemo(
     () =>
       playlistDetail &&
@@ -112,10 +140,51 @@ function PlayListDetail() {
   }, [id]);
 
   useEffect(() => {
+    if (extenderMode != "recommendation") {
+      return;
+    }
+
+    handleGetNewRecommendation();
+  }, [extenderMode]);
+  useEffect(() => {
     if (paused && playlistDetail) {
       dispatch(setTitle(`Spotify - ${playlistDetail.name}`));
     }
   }, [paused, playlistDetail]);
+
+  const handleGetNewRecommendation = () => {
+    if (!playlistDetail?.tracks?.total) {
+      getRecentlyPlayed()
+        .then((res) => {
+          runGetRecommendationTracks({
+            // seed_genres: randomPick(res.genres, 4).join(","),
+            seed_genres: "",
+            seed_tracks: randomPick(res.items.map((item) => item.track.id))
+              .join(
+                ","
+              ),
+            seed_artists: "",
+            limit: 10,
+          });
+        });
+
+      return;
+    }
+
+    const trackIds = Array.from(
+      new Set(
+        tracks.filter((track) => track.track)
+          .map((track) => track.track.id)
+      )
+    );
+    runGetRecommendationTracks({
+      limit: 10,
+      seed_artists: "",
+      seed_genres: "",
+      seed_tracks: randomPick(trackIds, 5)
+        .join(","),
+    });
+  };
 
   const handleSearchTracks = () => {
     if (runGetPlaylistTracksLoading) {
@@ -123,11 +192,11 @@ function PlayListDetail() {
     }
 
     id &&
-      runGetPlaylistTracks(id, {
-        offset: tracks.length,
-        limit: 20,
-        additional_types: "track",
-      });
+    runGetPlaylistTracks(id, {
+      offset: tracks.length,
+      limit: 20,
+      additional_types: "track",
+    });
   };
 
   const handleOnRow = (
@@ -170,7 +239,7 @@ function PlayListDetail() {
               {playlistDetail?.owner?.display_name}
             </Link>
 
-            {!!playlistDetail?.followers?.total && 
+            {!!playlistDetail?.followers?.total &&
               <span className="text-base">{followersCount}</span>
             }
 
@@ -182,43 +251,86 @@ function PlayListDetail() {
       }
       operationExtra={
         <>
-          {user && playlistDetail?.owner?.id != user?.id && 
-            <FollowPlaylist id={id} className="mr-24" />
+          {user && playlistDetail?.owner?.id != user?.id &&
+            <FollowPlaylist id={id} className="mr-24"/>
           }
-          <PlaylistMenu id={id} />
+          <PlaylistMenu id={id}/>
         </>
       }
     >
-      {playlistDetail && 
+      {playlistDetail &&
         <>
-          <Table<Omit<PlaylistTrackObject, "track"> & TrackObject>
-            gridTemplateColumns={{
-              5: "16px 6fr 4fr 3fr minmax(120px, 1fr)",
-              4: "16px 4fr 2fr minmax(120px, 1fr)",
-              3: "16px 4fr minmax(120px, 1fr)",
-            }}
-            colcount={colcount >= 5 ? 5 : colcount >= 4 ? 4 : 3}
-            total={playlistDetail.tracks.total}
-            next={handleSearchTracks}
-            dataSource={tracks.map((item) => ({
-              ...item.track,
-              is_saved: item.is_saved,
-              added_at: item.added_at,
-              added_by: item.added_by,
-            }))}
-            columns={columns}
-            rowKey={(item) => `${item.id}_${item.album.id}`}
-            enabledKey="is_playable"
-            onRow={handleOnRow}
-            rowSelection={rowSelected}
-          />
-          {id && user?.id === playlistDetail.owner.id && 
-            <Extender
-              id={id}
-              runAddTracksToPlaylist={runAddTracksToPlaylist}
-              tracks={tracks}
+          {!!total &&
+            <Table<Omit<PlaylistTrackObject, "track"> & TrackObject>
+              gridTemplateColumns={{
+                5: "16px 6fr 4fr 3fr minmax(120px, 1fr)",
+                4: "16px 4fr 2fr minmax(120px, 1fr)",
+                3: "16px 4fr minmax(120px, 1fr)",
+              }}
+              colcount={colcount >= 5 ? 5 : colcount >= 4 ? 4 : 3}
+              total={playlistDetail.tracks.total}
+              next={handleSearchTracks}
+              dataSource={tracks.map((item) => ({
+                ...item.track,
+                is_saved: item.is_saved,
+                added_at: item.added_at,
+                added_by: item.added_by,
+              }))}
+              columns={columns}
+              rowKey={(item) => `${item.id}_${item.album.id}`}
+              enabledKey="is_playable"
+              onRow={handleOnRow}
+              rowSelection={rowSelected}
             />
           }
+          {id &&
+            user?.id === playlistDetail.owner.id &&
+            (extenderMode === "recommendation" ?
+              <section>
+                <button className="float-right"
+                  onClick={() => setExtenderMode("search")}
+                >
+                  {formatMessage({ id: "playlist.curation.find_more" })}
+                </button>
+                <h1 className="text-base">
+                  {formatMessage({ id: "playlist.extender.recommended.title" })}
+                </h1>
+                <p>
+                  {formatMessage({
+                    id:
+                        playlistDetail.tracks.total > 0
+                          ? "playlist.extender.songs.in.playlist"
+                          : "playlist.extender.title.in.playlist",
+                  })}
+                </p>
+                <Loading loading={runGetRecommendationTracksLoading}>
+                  {recommendationTracks?.tracks?.length &&
+                      <MixedList
+                        id={id}
+                        total={recommendationTracks.tracks.length}
+                        next={() => false}
+                        items={recommendationTracks.tracks.map((track) => ({
+                          type: "track",
+                          value: track,
+                        }))}
+                        runAddTracksToPlaylist={runAddTracksToPlaylist}
+                      />
+                  }
+                </Loading>
+                <button className="float-right"
+                  onClick={handleGetNewRecommendation}
+                >
+                  {formatMessage({ id: "playlist.extender.refresh" })}
+                </button>
+              </section>
+              :
+              <Search
+                id={id}
+                setExtenderMode={setExtenderMode}
+                tracks={tracks.map((item) => item.track)}
+                runAddTracksToPlaylist={runAddTracksToPlaylist}
+              />
+            )}
         </>
       }
     </ContentContainer>
