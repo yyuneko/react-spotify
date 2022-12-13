@@ -1,10 +1,5 @@
 import classnames from "classnames";
-import React, {
-  HTMLAttributes,
-  ReactElement,
-  ReactNode,
-  TdHTMLAttributes,
-} from "react";
+import React, { HTMLAttributes, ReactElement, ReactNode, TdHTMLAttributes } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 import { getValueWithKeys } from "@utils/index";
@@ -104,6 +99,7 @@ function Table<RowType>(props: TableProps<RowType>) {
           scrollableTarget="app__main"
           dataLength={dataSource?.length}
           hasMore={dataSource?.length < total}
+          scrollThreshold={0.95}
         >
           {dataSource?.map?.((item, index) => {
             try {
@@ -120,7 +116,7 @@ function Table<RowType>(props: TableProps<RowType>) {
                   }
                   aria-selected={
                     Array.isArray(rowSelection) &&
-                      rowSelection.includes(index) ||
+                    rowSelection.includes(index) ||
                     rowSelection === index
                   }
                   aria-disabled={
@@ -135,7 +131,7 @@ function Table<RowType>(props: TableProps<RowType>) {
                     ...style,
                   }}
                 >
-                  {columns.map((col, colIndex) => 
+                  {columns.map((col, colIndex) =>
                     <div
                       role="gridcell"
                       aria-colindex={colIndex + 1}
@@ -156,7 +152,8 @@ function Table<RowType>(props: TableProps<RowType>) {
                         col.width ? { width: col.width } : { maxWidth: "100%" }
                       }
                     >
-                      {col.render(item[col.dataIndex], item, index)}
+                      {col.render(typeof item === "object"
+                        ? item?.[col.dataIndex] : undefined, item, index)}
                     </div>
                   )}
                 </div>
