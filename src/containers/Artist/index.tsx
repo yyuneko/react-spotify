@@ -176,41 +176,49 @@ function Artist() {
           rowSelection={rowSelected}
         />
       </section>
-      <section>
-        <h1 className="text-base">
-          {formatMessage({ id: "artist-page.discography" })}
-        </h1>
-        <Tabs
-          items={[
-            /*
-             * {
-             *   key: "artist-page.popular",
-             *   label: formatMessage({ id: "artist-page.popular" }),
-             *   children: <Albums items={albums.items.sort((a,b)=>a.)} />,
-             * },
-             */
-            {
-              key: "artist.albums",
-              label: formatMessage({ id: "artist.albums" }),
-              children: !!albumsGroup.length && <Albums items={albumsGroup} />,
-            },
-            {
-              key: "artist.singles",
-              label: formatMessage({ id: "artist.singles" }),
-              children: !!singlesGroup.length && 
-                <Albums items={singlesGroup} />
-              ,
-            },
-            {
-              key: "artist.compilations",
-              label: formatMessage({ id: "artist.compilations" }),
-              children: !!compilationsGroup.length && 
-                <Albums items={compilationsGroup} />
-              ,
-            },
-          ]}
-        />
-      </section>
+      {!!(
+        albumsGroup.length ||
+        singlesGroup.length ||
+        compilationsGroup.length
+      ) && 
+        <section>
+          <h1 className="text-base">
+            {formatMessage({ id: "artist-page.discography" })}
+          </h1>
+          <Tabs
+            items={[
+              /*
+               * {
+               *   key: "artist-page.popular",
+               *   label: formatMessage({ id: "artist-page.popular" }),
+               *   children: <Albums items={albums.items.sort((a,b)=>a.)} />,
+               * },
+               */
+              {
+                key: "artist.albums",
+                label: formatMessage({ id: "artist.albums" }),
+                children: !!albumsGroup.length && 
+                  <Albums items={albumsGroup} />
+                ,
+              },
+              {
+                key: "artist.singles",
+                label: formatMessage({ id: "artist.singles" }),
+                children: !!singlesGroup.length && 
+                  <Albums items={singlesGroup} />
+                ,
+              },
+              {
+                key: "artist.compilations",
+                label: formatMessage({ id: "artist.compilations" }),
+                children: !!compilationsGroup.length && 
+                  <Albums items={compilationsGroup} />
+                ,
+              },
+            ].filter((item) => item)}
+          />
+        </section>
+      }
       <section>
         <h1 className="text-base">
           {format(
