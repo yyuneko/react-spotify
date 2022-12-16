@@ -147,10 +147,10 @@ function Artist() {
       cover={artistDetail?.images?.[0]?.url}
       fallback={<ArtistIcon width="48" height="48"/>}
       title={artistDetail?.name}
-      extra={format(
-        formatMessage({ id: "artist.monthly-listeners-count" }),
-        artistDetail?.popularity
-      )}
+      extra={!!artistDetail?.followers?.total && <span className="text-base">{format(
+        formatMessage({ id: "user.followers" }),
+        artistDetail.followers.total
+      )}</span>}
       operationExtra={
         <>
           <button onClick={handleSwitchFollowStatus}
@@ -209,11 +209,6 @@ function Artist() {
           />
         </Section>
       }
-      <Section title={format(
-        formatMessage({ id: "artist-page.featuring.seo.title" }),
-        artistDetail?.name
-      )}>
-      </Section>
       {!!relatedArtists?.artists?.length &&
         <Section
           to={`/artist/${id}/related`}
