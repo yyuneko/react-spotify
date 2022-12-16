@@ -7,8 +7,9 @@ import { useParams } from "react-router-dom";
 import { ArtistCard } from "@components/Card";
 import ContentContainer from "@components/ContentContainer";
 import { PlaylistMenu } from "@components/Menu";
+import Section from "@components/Section";
 import Table from "@components/Table";
-import Tabs from "@components/Tabs";
+import Tabs, { TabItem } from "@components/Tabs";
 import Albums from "@containers/Artist/components/albums";
 import { SimplifiedAlbumObject } from "@service/albums/types";
 import {
@@ -29,6 +30,8 @@ import useColumns from "@utils/columns";
 import { format } from "@utils/index";
 import { useSpotifyPlayer } from "@utils/player";
 
+import styles from "./index.module.less";
+
 function Artist() {
   const { id } = useParams();
   const { formatMessage } = useIntl();
@@ -38,13 +41,10 @@ function Artist() {
   const [rowSelected, setRowSelected] = useState<number | undefined>();
   const [albumsGroup, setAlbumsGroup] = useState<SimplifiedAlbumObject[]>([]);
   const [singlesGroup, setSinglesGroup] = useState<SimplifiedAlbumObject[]>([]);
-  const [compilationsGroup, setCompilationsGroup] = useState<
-    SimplifiedAlbumObject[]
-  >([]);
+  const [compilationsGroup, setCompilationsGroup] = useState<SimplifiedAlbumObject[]>([]);
   const [appearsOnGroup, setAppearsOnGroup] = useState<SimplifiedAlbumObject[]>(
     []
   );
-
   const {
     data: artistDetail,
     run: runGetArtistDetail,
@@ -151,18 +151,17 @@ function Artist() {
       )}
       operationExtra={
         <>
-          <button onClick={handleSwitchFollowStatus}>
+          <button onClick={handleSwitchFollowStatus}
+            aria-checked={!!following?.[0]}
+            className={"mr-24 " + styles["followButton"]}>
             {formatMessage({ id: following?.[0] ? "following" : "follow" })}
           </button>
-          <PlaylistMenu id={id} />
+          <PlaylistMenu id={id}/>
         </>
       }
       contextUri={`spotify:artist:${id}`}
     >
-      <section>
-        <h1 className="text-base">
-          {formatMessage({ id: "artist.popular-tracks" })}
-        </h1>
+      <Section title={formatMessage({ id: "artist.popular-tracks" })}>
         <Table<TrackObject>
           gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
           colcount={3}
@@ -175,87 +174,72 @@ function Artist() {
           onRow={handleOnRow}
           rowSelection={rowSelected}
         />
-      </section>
+      </Section>
       {!!(
         albumsGroup.length ||
-        singlesGroup.length ||
-        compilationsGroup.length
-      ) && 
-        <section>
-          <h1 className="text-base">
-            {formatMessage({ id: "artist-page.discography" })}
-          </h1>
+          singlesGroup.length ||
+          compilationsGroup.length
+      ) &&
+        <Section
+          to={`/artist/${id}/discography/all`}
+          title={formatMessage({ id: "artist-page.discography" })}>
           <Tabs
             items={[
-              /*
-               * {
-               *   key: "artist-page.popular",
-               *   label: formatMessage({ id: "artist-page.popular" }),
-               *   children: <Albums items={albums.items.sort((a,b)=>a.)} />,
-               * },
-               */
-              {
+              !!albumsGroup.length && {
                 key: "artist.albums",
                 label: formatMessage({ id: "artist.albums" }),
-                children: !!albumsGroup.length && 
-                  <Albums items={albumsGroup} />
-                ,
+                children: !!albumsGroup.length &&
+                  <Albums items={albumsGroup}/>,
               },
-              {
+              !!singlesGroup.length && {
                 key: "artist.singles",
                 label: formatMessage({ id: "artist.singles" }),
-                children: !!singlesGroup.length && 
-                  <Albums items={singlesGroup} />
-                ,
+                children: !!singlesGroup.length &&
+                  <Albums items={singlesGroup}/>,
               },
-              {
+              !!compilationsGroup.length && {
                 key: "artist.compilations",
                 label: formatMessage({ id: "artist.compilations" }),
-                children: !!compilationsGroup.length && 
-                  <Albums items={compilationsGroup} />
-                ,
+                children: !!compilationsGroup.length &&
+                  <Albums items={compilationsGroup}/>,
               },
-            ].filter((item) => item)}
+            ].filter((item) => item) as unknown as TabItem[]}
           />
-        </section>
+        </Section>
       }
-      <section>
-        <h1 className="text-base">
-          {format(
-            formatMessage({ id: "artist-page.featuring.seo.title" }),
-            artistDetail?.name
-          )}
-        </h1>
-      </section>
-      {!!relatedArtists?.artists?.length && 
-        <section>
-          <h1 className="text-base">
-            {formatMessage({ id: "artist-page.fansalsolike" })}
-          </h1>
+      <Section title={format(
+        formatMessage({ id: "artist-page.featuring.seo.title" }),
+        artistDetail?.name
+      )}>
+      </Section>
+      {!!relatedArtists?.artists?.length &&
+        <Section
+          to={`/artist/${id}/related`}
+          title={formatMessage({ id: "artist-page.fansalsolike" })}>
           <div
             className="grid"
             aria-colcount={colcount}
             style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
           >
-            {relatedArtists.artists.slice(0, colcount).map((artist) => 
-              <ArtistCard
-                key={artist.id}
-                id={artist.id}
-                media={artist.images[0]?.url}
-                name={artist.name}
-                type={formatMessage({ id: "card.tag.artist" })}
-              />
-            )}
+            {relatedArtists.artists.slice(0, colcount)
+              .map((artist) =>
+                <ArtistCard
+                  key={artist.id}
+                  id={artist.id}
+                  media={artist.images[0]?.url}
+                  name={artist.name}
+                  type={formatMessage({ id: "card.tag.artist" })}
+                />
+              )}
           </div>
-        </section>
+        </Section>
       }
-      {!!appearsOnGroup.length && 
-        <section>
-          <h1 className="text-base">
-            {formatMessage({ id: "artist.appears-on" })}
-          </h1>
-          <Albums items={appearsOnGroup} />
-        </section>
+      {!!appearsOnGroup.length &&
+        <Section
+          to={`/artist/${id}/appears-on`}
+          title={formatMessage({ id: "artist.appears-on" })}>
+          <Albums items={appearsOnGroup}/>
+        </Section>
       }
     </ContentContainer>
   );
