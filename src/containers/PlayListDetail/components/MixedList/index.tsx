@@ -1,16 +1,17 @@
 import React from "react";
-import {useIntl} from "react-intl";
-import {useSelector} from "react-redux";
+import { useIntl } from "react-intl";
+import { useSelector } from "react-redux";
 
+import ArtistIcon from "@assets/icons/artist.svg";
 import EnterIcon from "@assets/icons/router-forward.svg";
-import {SearchResultProps} from "@components/Card";
+import { SearchResultProps } from "@components/Card";
 import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
-import Table, {ColumnProp} from "@components/Table";
-import {History} from "@containers/PlayListDetail/components/Search";
-import {state} from "@store/index";
-import {useSpotifyPlayer} from "@utils/player";
+import Table, { ColumnProp } from "@components/Table";
+import { History } from "@containers/PlayListDetail/components/Search";
+import { state } from "@store/index";
+import { useSpotifyPlayer } from "@utils/player";
 
 interface Props {
   id: string;
@@ -45,9 +46,7 @@ export default function MixedList(props: Props) {
           return (
             <div className="inline-flex w-1-1">
               <Image
-                width="40"
-                height="40"
-                className="mr-16"
+                className="mr-16 w-40 h-40"
                 src={r.value.album?.images[0]?.url}
               />
               <div className="flex flex-col"
@@ -77,9 +76,7 @@ export default function MixedList(props: Props) {
           return (
             <div className="inline-flex w-1-1">
               <Image
-                width="40"
-                height="40"
-                className="mr-16"
+                className="mr-16 w-40 h-40"
                 src={r.value.images[0]?.url}
               />
               <div className="flex flex-col"
@@ -102,10 +99,9 @@ export default function MixedList(props: Props) {
             <div className="inline-flex w-1-1">
               <Image
                 shape="circle"
-                width="40"
-                height="40"
-                className="mr-16"
+                className="mr-16 w-40 h-40"
                 src={r.value.images[0]?.url}
+                fallback={<ArtistIcon width="16" height="16"/>}
               />
               <div className="flex flex-col"
                 style={{
@@ -192,7 +188,7 @@ export default function MixedList(props: Props) {
           type: "artist",
           id: row.value.id,
           albums: [],
-          detail: {name: row.value.name}
+          detail: { name: row.value.name }
         });
         break;
       }

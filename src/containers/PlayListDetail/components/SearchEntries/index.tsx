@@ -1,19 +1,19 @@
 import React from "react";
-import {useIntl} from "react-intl";
+import { useIntl } from "react-intl";
 
 import EnterIcon from "@assets/icons/router-forward.svg";
 import Table from "@components/Table";
-import {History} from "@containers/PlayListDetail/components/Search";
+import { History } from "@containers/PlayListDetail/components/Search";
 
 export const getSearchTypeEntryTitle = (type: "artist" | "album" | "track") =>
-  "playlist.curation.see_all_" + 
-    (type === "artist" ? "artists" : type === "album" ? "album" : "songs");
+  "playlist.curation.see_all_" +
+  (type === "artist" ? "artists" : type === "album" ? "album" : "songs");
 
 export default function SearchEntries(props: {
   handlePushNewMode: (mode: History) => void;
 }) {
-  const {handlePushNewMode} = props;
-  const {formatMessage} = useIntl();
+  const { handlePushNewMode } = props;
+  const { formatMessage } = useIntl();
 
   return <Table<"artist" | "album" | "track">
     showHeader={false}
@@ -24,7 +24,9 @@ export default function SearchEntries(props: {
         dataIndex: "",
         visible: true,
         render: (_, type) =>
-          <span>{formatMessage({id: getSearchTypeEntryTitle(type)})}</span>
+          <span className="text-base">
+            {formatMessage({ id: getSearchTypeEntryTitle(type) })}
+          </span>
       },
       {
         dataIndex: "",
