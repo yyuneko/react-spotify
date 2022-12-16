@@ -1,21 +1,22 @@
-import {useDebounce, useRequest} from "ahooks";
-import React, {useEffect, useRef, useState} from "react";
-import {useIntl} from "react-intl";
+import { useDebounce, useRequest } from "ahooks";
+import React, { useEffect, useRef, useState } from "react";
+import { useIntl } from "react-intl";
 
 import DeleteIcon from "@assets/icons/delete.svg";
 import BackToIcon from "@assets/icons/router-back.svg";
 import SearchIcon from "@assets/icons/search.svg";
-import {SearchResultProps} from "@components/Card";
+import { SearchResultProps } from "@components/Card";
 import MixedList from "@containers/PlayListDetail/components/MixedList";
-import {getAnAlbumsTracks} from "@service/albums";
-import {AlbumBase, SimplifiedAlbumObject} from "@service/albums/types";
-import {getAnArtistsAlbums, getAnArtistsTopTracks,} from "@service/artists";
-import {search} from "@service/search";
-import {SimplifiedTrackObject, TrackObject} from "@service/tracks/types";
+import { getAnAlbumsTracks } from "@service/albums";
+import { AlbumBase, SimplifiedAlbumObject } from "@service/albums/types";
+import { getAnArtistsAlbums, getAnArtistsTopTracks, } from "@service/artists";
+import { search } from "@service/search";
+import { SimplifiedTrackObject, TrackObject } from "@service/tracks/types";
+import { format } from "@utils/index";
 
 import styles from "./index.module.less";
 
-import SearchEntries, {getSearchTypeEntryTitle} from "../SearchEntries";
+import SearchEntries, { getSearchTypeEntryTitle } from "../SearchEntries";
 
 export type History =
   | {
@@ -53,8 +54,8 @@ export default function Search(props: {
     }
   ) => void;
 }) {
-  const {id, setExtenderMode, runAddTracksToPlaylist} = props;
-  const {formatMessage} = useIntl();
+  const { id, setExtenderMode, runAddTracksToPlaylist } = props;
+  const { formatMessage } = useIntl();
   /*
    * if mode equals to "search", then show some related search result,
    * otherwise show the content of current target, such as the tracks of an album
@@ -66,10 +67,10 @@ export default function Search(props: {
     items: [],
   });
   const [loading, setLoading] = useState(false);
-  const [keyword, setKeyword] = useState("fish");
-  const q = useDebounce(keyword, {wait: 500});
+  const [keyword, setKeyword] = useState("");
+  const q = useDebounce(keyword, { wait: 500 });
 
-  const {run: runGetAlbumTracks} = useRequest(getAnAlbumsTracks, {
+  const { run: runGetAlbumTracks } = useRequest(getAnAlbumsTracks, {
     manual: true,
     onSuccess: (res) => {
       if (currentMode.mode === "view" && currentMode.type === "album") {
@@ -81,18 +82,18 @@ export default function Search(props: {
     },
   });
 
-  const {run: runGetArtistTracks} = useRequest(getAnArtistsTopTracks, {
+  const { run: runGetArtistTracks } = useRequest(getAnArtistsTopTracks, {
     manual: true,
     onSuccess: (res) => {
       if (currentMode.mode === "view" && currentMode.type === "artist") {
-        setCurrentMode({...currentMode, topTracks: res.tracks});
+        setCurrentMode({ ...currentMode, topTracks: res.tracks });
       }
     },
     onFinally: () => {
       setLoading(false);
     }
   });
-  const {run: runGetArtistAlbums} = useRequest(getAnArtistsAlbums, {
+  const { run: runGetArtistAlbums } = useRequest(getAnArtistsAlbums, {
     manual: true,
     onSuccess: (res) => {
       if (currentMode.mode === "view" && currentMode.type === "artist") {
@@ -104,26 +105,26 @@ export default function Search(props: {
       }
     },
   });
-  const {run: runSearch} = useRequest(search, {
+  const { run: runSearch } = useRequest(search, {
     manual: true,
     onSuccess: (res) => {
       let items: SearchResultProps[] = [];
 
       if (res.tracks) {
         items = items.concat(
-          res.tracks.items.map((item) => ({type: "track", value: item}))
+          res.tracks.items.map((item) => ({ type: "track", value: item }))
         );
       }
 
       if (res.albums) {
         items = items.concat(
-          res.albums.items.map((item) => ({type: "album", value: item}))
+          res.albums.items.map((item) => ({ type: "album", value: item }))
         );
       }
 
       if (res.artists) {
         items = items.concat(
-          res.artists.items.map((item) => ({type: "artist", value: item}))
+          res.artists.items.map((item) => ({ type: "artist", value: item }))
         );
       }
 
@@ -154,7 +155,7 @@ export default function Search(props: {
       type: currentMode.mode === "search" ? currentMode.type : "all",
       items: [],
     });
-    searchHistoryStack.current = [{mode: "search", type: "all", items: []}];
+    searchHistoryStack.current = [{ mode: "search", type: "all", items: [] }];
   }, [q]);
 
   useEffect(() => {
@@ -183,6 +184,16 @@ export default function Search(props: {
           include_external: "audio",
           limit: 10,
         });
+      }
+    }else{
+      if(currentMode.type === "album")
+      {
+        if(currentMode.tracks.length >= (currentMode.detail?.total_tracks ?? 0)){return;}
+        runGetAlbumTracks(currentMode.id,{ limit: 10 });
+      }else if(currentMode.type === "artist")
+      {
+        if(currentMode.topTracks){return;}
+        runGetArtistTracks(currentMode.id);
       }
     }
   }, [currentMode, loading]);
@@ -218,12 +229,13 @@ export default function Search(props: {
   };
 
   return (
-    <section>
-      <div className="flex justify-between sticky"
-        style={{top: "60px"}}>
+    <>
+      <section
+        className="py-24 mt-24 flex justify-between sticky"
+        style={{ borderTop: "1px solid hsla(0,0%,100%,0.1)" ,top: "64px" }}>
         <div>
-          <h1 className="text-base">
-            {formatMessage({id: "playlist.curation.title"})}
+          <h1 className="text-base text-2xl font-bold">
+            {formatMessage({ id: "playlist.curation.title" })}
           </h1>
           <div className="inline-flex justify-between">
             <div className={"inline-flex " + styles["input"]}>
@@ -243,18 +255,18 @@ export default function Search(props: {
         <DeleteIcon width="24" height="24"
           onClick={() => setExtenderMode("recommendation")}
         />
-      </div>
+      </section>
       {currentMode.mode === "search" &&
-        <>
+        <div>
           {currentMode.type != "all" &&
-            <h1 onClick={handleBackToPreviousMode}>
+            <h1 onClick={handleBackToPreviousMode} className="text-lg flex items-center">
               <BackToIcon width="24" height="24"/>
               {formatMessage({
                 id: getSearchTypeEntryTitle(currentMode.type)
               })}
             </h1>
           }
-          <MixedList
+          {currentMode.items.length ? <><MixedList
             id={id}
             total={currentMode.total ?? 0}
             next={next}
@@ -263,12 +275,16 @@ export default function Search(props: {
             handlePushNewMode={handlePushNewMode}
           />
           {currentMode.type === "all" &&
-            <SearchEntries handlePushNewMode={handlePushNewMode}/>}
-        </>
+            <SearchEntries handlePushNewMode={handlePushNewMode}/>}</> :
+            q && <div className="flex w-full justify-center">
+              {format(formatMessage({ id: "search.empty-results-title" }),q)}
+            </div>
+          }
+        </div>
       }
       {currentMode.mode === "view" &&
-        <>
-          <h1 onClick={handleBackToPreviousMode}>
+        <div>
+          <h1 onClick={handleBackToPreviousMode} className="text-lg flex items-center">
             <BackToIcon width="24" height="24"/>
             {currentMode.detail?.name}
           </h1>
@@ -280,7 +296,7 @@ export default function Search(props: {
                 type: "track",
                 value: {
                   ...track,
-                  album: {images: currentMode.detail?.images},
+                  album: { images: currentMode.detail?.images },
                 } as unknown as TrackObject,
               }))}
               total={currentMode.detail?.total_tracks ?? 0}
@@ -295,9 +311,9 @@ export default function Search(props: {
           }
           {currentMode.type === "artist" &&
             <>
-              <section>
+              {!!currentMode.topTracks?.length && <section>
                 <h1>
-                  {formatMessage({id: "playlist.curation.popular_songs"})}
+                  {formatMessage({ id: "playlist.curation.popular_songs" })}
                 </h1>
                 <MixedList
                   handlePushNewMode={handlePushNewMode}
@@ -308,11 +324,11 @@ export default function Search(props: {
                   })) ?? []}
                   total={currentMode.topTracks?.length ?? 1}
                   runAddTracksToPlaylist={runAddTracksToPlaylist}
-                  next={() => runGetArtistTracks(currentMode.id)}
+                  next={() => false}
                 />
-              </section>
+              </section>}
               <section>
-                <h1>{formatMessage({id: "playlist.curation.albums"})}</h1>
+                <h1>{formatMessage({ id: "playlist.curation.albums" })}</h1>
                 <MixedList
                   handlePushNewMode={handlePushNewMode}
                   id={id}
@@ -332,8 +348,8 @@ export default function Search(props: {
               </section>
             </>
           }
-        </>
+        </div>
       }
-    </section>
+    </>
   );
 }
