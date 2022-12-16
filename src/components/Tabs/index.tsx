@@ -20,14 +20,16 @@ function Tab(props: TabProps) {
   );
 }
 
-export interface TabsProps extends CommonProps {
-  defaultActiveKey?: string;
-  items: {
+export interface TabItem{
     label: string;
     key: string;
     children?: ReactNode;
     to?: string;
-  }[];
+  }
+
+export interface TabsProps extends CommonProps {
+  defaultActiveKey?: string;
+  items: TabItem[];
   onChange?: (key: string) => void;
 }
 
@@ -41,7 +43,7 @@ export default function Tabs(props: TabsProps) {
 
   return (
     <div className={styles["tabs"]}>
-      <div className={styles["pills"]}>
+      <div className={styles["pills"] + " mb-16"}>
         {items.map((item) => 
           <Tab
             to={item.to}
