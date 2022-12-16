@@ -37,24 +37,19 @@ function LikedSongsCard(props: {
 
   return (
     <div
-      className="flex p-20"
+      className="flex p-20 flex-col items-stretch relative"
       style={{
         background: "linear-gradient(149.46deg,#450af5,#8e8ee5 99.16%)",
-        position: "relative",
         gridColumn: "1/3",
-        flexDirection: "column",
-        alignItems: "stretch",
       }}
       onClick={() => navigate("/collection/tracks")}
     >
       <div className="flex">
-        <Join
+        <Join className="overflow-hidden text-ellipsis"
           style={{
             display: "-webkit-box",
             lineClamp: 3,
             maxHeight: "130px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
           }}
         >
           {likedSongs?.items?.map?.((track) => 
@@ -79,14 +74,14 @@ function LikedSongsCard(props: {
           )}
         </div>
       </div>
-      <div style={{ position: "absolute", right: "16px", bottom: "16px" }}>
+      <div className="absolute" style={{ right: "16px", bottom: "16px" }}>
         <PlayButton
           size={56}
           className="mr-32"
           isPlaying={
             !paused && context.uri === `spotify:user:${user?.id}:collection`
           }
-          onClick={handlePlayCurrentPlaylist}
+          onClick={e => {handlePlayCurrentPlaylist();e.stopPropagation();}}
         />
       </div>
     </div>

@@ -148,19 +148,12 @@ export default function SearchAll(props: SearchTabProps) {
                   media={album.images[0]?.url}
                   name={album.name}
                   yearOrArtists={
-                    <div
-                      className="flex"
-                      style={{
-                        alignItems: "baseline",
-                        whiteSpace: "pre",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div className="flex items-baseline whitespace-pre flex-wrap">
                       <span>{dayjs(album.release_date).year()}</span>
                       {" • "}
                       {album.artists.map((artist, index) => 
                         <span key={artist.id}>
-                          <Link to={`/artist/${artist.id}`} ellipsis={false}>
+                          <Link to={`/artist/${artist.id}`}>
                             {artist.name}
                           </Link>
                           {index != album.artists.length - 1 && ", "}

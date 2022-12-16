@@ -235,8 +235,8 @@ export function PopularSearchResultCard(props: SearchResultProps) {
 
   return (
     <div
-      className={styles["card"] + " p-20"}
-      style={{ flexDirection: "column", gap: "20px", position: "relative" }}
+      className={styles["card"] + " p-20 flex-col relative"}
+      style={{ gap: "20px" }}
       onClick={() => navigate(`/${type}/${value.id}`)}
     >
       <div
@@ -257,8 +257,8 @@ export function PopularSearchResultCard(props: SearchResultProps) {
           {value.name}
         </div>
         <div
-          className="inline-flex"
-          style={{ fontSize: "0.75rem", alignItems: "center", gap: "24px" }}
+          className="inline-flex items-center"
+          style={{ fontSize: "0.75rem", gap: "24px" }}
         >
           {(type === "track" || type === "album") && 
             <Join type="comma">

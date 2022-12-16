@@ -39,48 +39,56 @@ export default function ContentContainer(props: ContentContainerProps) {
   } = props;
   const { formatMessage } = useIntl();
   const paused = useSelector<state, boolean>((state) => state.player.paused);
-  const context = useSelector<
-    state,
-    { type?: string; id?: string; uri?: string; name?: string }
-  >((state) => state.player.context);
+  const context = useSelector<state,
+    { type?: string; id?: string; uri?: string; name?: string }>
+    ((state) => state.player.context);
+  const fontSize = useSelector<state, number>(state => state.ui.fontSize);
+  const handlePlayCurrentContext = usePlayContext({ uri: contextUri });
 
-  const handlePlayCurrentContext = usePlayContext({uri: contextUri});
+  const getTitleFontSize = () => {
+    if (title) {
+      const width = (document.getElementById("app__main")
+        ?.getBoundingClientRect()?.width ?? 300) - 250;
+      console.log(width);
+
+      return Math.min(6, Math.max(2, Math.floor(width / title.length / fontSize)));
+    }
+
+    return 2;
+  };
 
   return (
     <Loading loading={initialLoading}>
-      <NavBar />
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          alignItems: "flex-end",
-          boxSizing: "border-box",
-        }}
-        className="pl-32 pr-32 pb-24"
+      <NavBar/>
+      <div className="pl-32 pr-32 pb-24 flex w-full items-end box-border"
       >
-        <Image alt="cover" className={styles["cover"]} src={cover} />
-        <div style={{ flex: "1" }}>
-          {tag && 
+        <Image alt="cover" className={styles["cover"]} src={cover}/>
+        <div className="flex-1">
+          {tag &&
             <span className="text-base">{formatMessage({ id: tag })}</span>
           }
-          <div className="text-xxl text-base text-bold">{title}</div>
+          <div
+            style={title
+              ? { fontSize: `${getTitleFontSize()}rem` }
+              : undefined}
+            className="text-8xl text-base font-bold py-16">{title}</div>
           {description && <p className="text-m">{description}</p>}
-          {extra && 
-            <div className="inline-flex" style={{ alignItems: "baseline" }}>
+          {extra &&
+            <div className="inline-flex items-baseline">
               {extra}
             </div>
           }
         </div>
       </div>
       <div
-        style={{ height: "104px", boxSizing: "border-box" }}
-        className="flex pl-32 pr-32 pt-24 pb-24"
+        style={{ height: "104px" }}
+        className="flex pl-32 pr-32 pt-24 pb-24 box-border"
       >
         <PlayButton
           size={56}
           className="mr-32"
           isPlaying={!paused && context.uri === contextUri}
-          onClick={ handlePlayCurrentContext}
+          onClick={handlePlayCurrentContext}
         />
         {operationExtra}
       </div>

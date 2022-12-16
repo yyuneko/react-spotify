@@ -11,7 +11,7 @@ interface Props extends CommonProps {
 }
 
 function Join(props: Props) {
-  const { children, type = "comma", ellipsis = true, ...otherProps } = props;
+  const { children, type = "comma", ellipsis = true,className, ...otherProps } = props;
 
   return (
     <div
@@ -20,7 +20,7 @@ function Join(props: Props) {
         [styles["join-comma"]]: type === "comma",
         [styles["join-dot"]]: type === "dot",
         [styles["ellipsis"]]: ellipsis
-      })}
+      }) + " " + (className ?? "")}
     >
       {children}
     </div>

@@ -17,15 +17,10 @@ import PlayingGreenIcon from "@assets/icons/playing-green.svg";
 import SearchFill from "@assets/icons/search-fill.svg";
 import Search from "@assets/icons/search.svg";
 import NavLink from "@components/NavLink";
-import {
-  createPlaylist,
-  getAListOfCurrentUsersPlaylists,
-} from "@service/playlists";
+import { createPlaylist, getAListOfCurrentUsersPlaylists, } from "@service/playlists";
 import { SimplifiedPlaylistObject } from "@service/playlists/types";
 import { state } from "@store/index";
 import { format, useCurrentUser } from "@utils/index";
-
-import "./index.less";
 
 function SideBar({ className }: { className?: string }) {
   const { formatMessage } = useIntl();
@@ -39,10 +34,8 @@ function SideBar({ className }: { className?: string }) {
       setPlaylists(playlists.concat(res.items));
     },
   });
-  const context = useSelector<
-    state,
-    { type?: string; id?: string; uri?: string }
-  >((state) => state.player.context);
+  const context = useSelector<state,
+    { type?: string; id?: string; uri?: string }>((state) => state.player.context);
 
   useEffect(() => {
     user && run({ limit: 20 });
@@ -61,11 +54,12 @@ function SideBar({ className }: { className?: string }) {
         formatMessage({ id: "playlist.new-default-name" }),
         playlistCountCreatedByCurrentUser + 1
       ),
-    }).then((res) => {
-      setPlaylists([]);
-      run();
-      navigate(`/playlist/${res.id}`);
-    });
+    })
+      .then((res) => {
+        setPlaylists([]);
+        run();
+        navigate(`/playlist/${res.id}`);
+      });
   };
 
   const handleGetPlaylists = () => {
@@ -78,25 +72,22 @@ function SideBar({ className }: { className?: string }) {
 
   return (
     <div
-      className={(className ?? "") + " flex pl-24 pr-24"}
+      className={(className ?? "") +
+        " flex pl-24 pr-24 flex-col items-stretch flex-1 h-full"}
       style={{
-        flexDirection: "column",
-        alignItems: "stretch",
-        flex: 1,
-        height: "100%",
         backgroundColor: "var(--sidebar-base)",
       }}
     >
       <div className="text-base pt-24 pb-18">
         <Link to="/">
-          <Logo width="131" height="40" />
+          <Logo width="131" height="40"/>
         </Link>
       </div>
-      <ul style={{ listStyle: "none", border: 0, margin: 0, padding: 0 }}>
+      <ul className="list-none border-0 m-0 p-0">
         <li>
           <NavLink
             to="/"
-            prefix={[<Home />, <HomeFill />]}
+            prefix={[<Home/>, <HomeFill/>]}
             isMatched={location.pathname === "/"}
           >
             {formatMessage({ id: "view.web-player-home" })}
@@ -105,7 +96,7 @@ function SideBar({ className }: { className?: string }) {
         <li>
           <NavLink
             to="/search"
-            prefix={[<Search />, <SearchFill />]}
+            prefix={[<Search/>, <SearchFill/>]}
             isMatched={location.pathname.startsWith("/search")}
           >
             {formatMessage({ id: "navbar.search" })}
@@ -114,7 +105,7 @@ function SideBar({ className }: { className?: string }) {
         <li>
           <NavLink
             to="/collection/playlists"
-            prefix={[<Collection />, <CollectionFill />]}
+            prefix={[<Collection/>, <CollectionFill/>]}
             isMatched={
               location.pathname != "/collection/tracks" &&
               location.pathname.startsWith("/collection")
@@ -124,31 +115,21 @@ function SideBar({ className }: { className?: string }) {
           </NavLink>
         </li>
       </ul>
-      <div
-        className="mt-24"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          flex: "1",
-          overflow: "hidden",
-        }}
-      >
+      <div className="mt-24 flex flex-col flex-1 overflow-hidden">
         <NavLink
           role="button"
           className="pt-8 pb-8"
           prefix={[
             <div
+              className="items-center justify-center text-base"
               style={{
+                display: "flex",
                 width: "24px",
                 height: "24px",
                 backgroundColor: "var(--text-plain)",
-                color: "#000",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
               }}
             >
-              <Add width="16" height="16" />
+              <Add width="16" height="16"/>
             </div>,
             undefined,
           ]}
@@ -159,30 +140,22 @@ function SideBar({ className }: { className?: string }) {
         <NavLink
           className="pt-8 pb-8"
           to="/collection/tracks"
-          prefix={[<Favorite />, <Favorite />]}
+          prefix={[<Favorite/>, <Favorite/>]}
           isMatched={location.pathname === "/collection/tracks"}
         >
           {formatMessage({ id: "sidebar.liked_songs" })}
         </NavLink>
         <hr
+          className="w-full border-none"
           style={{
             height: "1px",
-            width: "100%",
             backgroundColor: "#282828",
-            border: "none",
           }}
         />
 
         <ul
           id="sidebar-playlists"
-          className="scrollbar"
-          style={{
-            listStyle: "none",
-            border: 0,
-            margin: 0,
-            padding: 0,
-            overflowY: "scroll",
-          }}
+          className="scrollbar list-none border-0 m-0 p-0 overflow-y-scroll"
         >
           <InfiniteScroll
             next={handleGetPlaylists}
@@ -191,13 +164,13 @@ function SideBar({ className }: { className?: string }) {
             dataLength={playlists.length}
             scrollableTarget="sidebar-playlists"
           >
-            {data?.items?.map?.((item) => 
+            {data?.items?.map?.((item) =>
               <li key={item.id}>
                 <NavLink
-                  className="w-1-1"
+                  className="w-full"
                   to={`/playlist/${item.id}`}
                   isMatched={location.pathname === `/playlist/${item.id}`}
-                  suffix={context.uri === item.uri && <PlayingGreenIcon />}
+                  suffix={context.uri === item.uri && <PlayingGreenIcon/>}
                 >
                   {item.name}
                 </NavLink>

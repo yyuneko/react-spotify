@@ -111,7 +111,7 @@ export default function Queue() {
       }
       {!!queue?.queue?.length && 
         <section>
-          <h2 className="inline-flex" style={{ alignItems: "baseline" }}>
+          <h2 className="inline-flex items-baseline">
             {formatMessage({ id: "queue.next-from" })}
             <Link to={`/${context.type}/${context.id}`}>{context.name}</Link>
           </h2>

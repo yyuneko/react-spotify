@@ -61,17 +61,10 @@ export default function Albums() {
                 media={album.album.images?.[0]?.url}
                 name={album.album.name}
                 yearOrArtists={
-                  <div
-                    className="flex"
-                    style={{
-                      alignItems: "baseline",
-                      whiteSpace: "pre",
-                      flexWrap: "wrap",
-                    }}
-                  >
+                  <div className="flex items-baseline whitespace-pre flex-wrap">
                     {album.album.artists.map((artist, index) => 
                       <span key={artist.id}>
-                        <Link to={`/artist/${artist.id}`} ellipsis={false}>
+                        <Link to={`/artist/${artist.id}`}>
                           {artist.name}
                         </Link>
                         {index != album.album.artists.length - 1 && ", "}
