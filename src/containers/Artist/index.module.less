@@ -1,11 +1,17 @@
-.artistCover {
-  height: 192px;
-  min-width: 192px;
-  margin-right: 24px;
-}
-@media (min-width: 1280px) {
-  .artistCover {
-    height: 232px;
-    min-width: 232px;
+.followButton{
+  background-color: transparent;
+  border: 1px solid hsla(0,0%,100%,0.3);
+  border-radius: 4px;
+  padding: 7px 15px;
+  text-align: center;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-base);
+  &:hover{
+    border-color: var(--text-base);
+  }
+  &[aria-checked="true"]{
+    border-color: var(--text-base);
   }
 }
