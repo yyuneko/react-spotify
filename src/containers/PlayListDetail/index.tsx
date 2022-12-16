@@ -4,6 +4,7 @@ import { useIntl } from "react-intl";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
+import PlaylistIcon from "@assets/icons/playlist.svg";
 import ContentContainer from "@components/ContentContainer";
 import { FollowPlaylist } from "@components/Follow";
 import Join from "@components/Join";
@@ -229,6 +230,7 @@ function PlayListDetail() {
       initialLoading={initialLoading}
       contextUri={`spotify:playlist:${id}`}
       cover={playlistDetail?.images?.[0]?.url}
+      fallback={<PlaylistIcon width="48" height="48"/>}
       extra={
         <>
           <Join type="dot">

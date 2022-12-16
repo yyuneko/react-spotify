@@ -17,6 +17,7 @@ interface ContentContainerProps extends CommonProps {
   initialLoading: boolean;
   type: "playlist" | "album" | "collection" | "artist";
   cover?: string;
+  fallback?: ReactNode;
   tag?: string;
   title?: string;
   description?: string;
@@ -32,7 +33,9 @@ export default function ContentContainer(props: ContentContainerProps) {
     cover,
     tag,
     title,
+    type,
     extra,
+    fallback,
     description,
     contextUri,
     operationExtra,
@@ -48,10 +51,29 @@ export default function ContentContainer(props: ContentContainerProps) {
   const getTitleFontSize = () => {
     if (title) {
       const width = (document.getElementById("app__main")
-        ?.getBoundingClientRect()?.width ?? 300) - 250;
-      console.log(width);
+        ?.getBoundingClientRect()?.width ?? 300) - 300;
+      console.log(width, fontSize);
+      const autoFitFontSize = width / title.length / fontSize;
 
-      return Math.min(6, Math.max(2, Math.floor(width / title.length / fontSize)));
+      if (autoFitFontSize < 2) {
+        return 2;
+      }
+
+      if (autoFitFontSize > 6) {
+        return 6;
+      }
+
+      if (autoFitFontSize >= 5) {
+        return 6;
+      }
+
+      if (autoFitFontSize >= 4) {
+        return 4.5;
+      }
+
+      if (autoFitFontSize >= 3) {
+        return 3;
+      }
     }
 
     return 2;
@@ -60,9 +82,15 @@ export default function ContentContainer(props: ContentContainerProps) {
   return (
     <Loading loading={initialLoading}>
       <NavBar/>
-      <div className="pl-32 pr-32 pb-24 flex w-full items-end box-border"
+      <div
+        className="pl-16 pr-16 xl:pl-32 xl:pr-32 pb-24 flex w-full items-end box-border"
+        style={{ maxHeight: "436px",minHeight: "276px",height: "calc(30vh - 64px)" }}
       >
-        <Image alt="cover" className={styles["cover"]} src={cover}/>
+        <Image
+          alt="cover"
+          fallback={fallback}
+          className={styles["cover"]} src={cover}
+          shape={type === "artist" ? "circle" : "square"}/>
         <div className="flex-1">
           {tag &&
             <span className="text-base">{formatMessage({ id: tag })}</span>
@@ -71,7 +99,7 @@ export default function ContentContainer(props: ContentContainerProps) {
             style={title
               ? { fontSize: `${getTitleFontSize()}rem` }
               : undefined}
-            className="text-8xl text-base font-bold py-16">{title}</div>
+            className="text-8xl text-base py-16 font-black">{title}</div>
           {description && <p className="text-m">{description}</p>}
           {extra &&
             <div className="inline-flex items-baseline">
@@ -82,7 +110,7 @@ export default function ContentContainer(props: ContentContainerProps) {
       </div>
       <div
         style={{ height: "104px" }}
-        className="flex pl-32 pr-32 pt-24 pb-24 box-border"
+        className="flex pl-16 pr-16 xl:pl-32 xl:pr-32 pt-24 pb-24 box-border items-center"
       >
         <PlayButton
           size={56}
@@ -92,7 +120,7 @@ export default function ContentContainer(props: ContentContainerProps) {
         />
         {operationExtra}
       </div>
-      <div className="pl-32 pr-32">{children}</div>
+      <div className="pl-16 pr-16 xl:pl-32 xl:pr-32">{children}</div>
     </Loading>
   );
 }

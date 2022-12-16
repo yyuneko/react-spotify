@@ -4,6 +4,7 @@ import { useIntl } from "react-intl";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
+import ArtistIcon from "@assets/icons/artist.svg";
 import { ArtistCard } from "@components/Card";
 import ContentContainer from "@components/ContentContainer";
 import { PlaylistMenu } from "@components/Menu";
@@ -144,6 +145,7 @@ function Artist() {
       initialLoading={loading}
       type="artist"
       cover={artistDetail?.images?.[0]?.url}
+      fallback={<ArtistIcon width="48" height="48"/>}
       title={artistDetail?.name}
       extra={format(
         formatMessage({ id: "artist.monthly-listeners-count" }),
