@@ -207,7 +207,7 @@ export default function AlbumOverview(props: AlbumOverviewProps) {
       </div>
     </div>
     <Table<SimplifiedTrackObject>
-      ref={bodyRef}
+      outerRef={bodyRef}
       scrollableTarget={`album_${albumDetail.id}`}
       className="px-16 xl:px-32"
       gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
