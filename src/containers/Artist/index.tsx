@@ -11,7 +11,7 @@ import { PlaylistMenu } from "@components/Menu";
 import Section from "@components/Section";
 import Table from "@components/Table";
 import Tabs, { TabItem } from "@components/Tabs";
-import Albums from "@containers/Artist/components/albums";
+import Albums from "@containers/Artist/components/Albums";
 import { SimplifiedAlbumObject } from "@service/albums/types";
 import {
   getAnArtist,
