@@ -1,6 +1,7 @@
 import classnames from "classnames";
-import React, { HTMLAttributes, ReactElement, ReactNode, TdHTMLAttributes } from "react";
+import React, { HTMLAttributes, ReactElement, ReactNode, TdHTMLAttributes, } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { useInView } from "react-intersection-observer";
 
 import { getValueWithKeys } from "@utils/index";
 
@@ -18,6 +19,8 @@ export interface ColumnProp<RowType> {
 }
 
 interface TableProps<RowType> extends CommonProps {
+  outerRef?:React.Ref<any>
+  scrollableTarget?: string;
   showHeader?: boolean;
   dataSource: RowType[];
   colcount: number;
@@ -49,16 +52,31 @@ function Table<RowType>(props: TableProps<RowType>) {
     total,
     next,
     gridTemplateColumns,
+    scrollableTarget,
+    outerRef
   } = props;
+  const { ref: innerRef, entry } = useInView({
+    root: document.querySelector("#app__main"),
+    threshold: [1]
+  });
 
   return (
     <div
       className={styles["table__container"] + " " + className}
       role="grid"
       aria-colcount={colcount}
+      ref={outerRef}
     >
-      {showHeader && 
-        <div className={styles["table__thead"]} role="presentation">
+      {showHeader && <>
+        <div ref={innerRef}/>
+        <div
+          className={classnames({
+            isPinned: (entry?.intersectionRatio ?? 1) < 1,
+            [styles["table__thead"]]: true,
+            "text-xs": true
+          }) + " px-16 xl:px-32"}
+          role="presentation"
+        >
           <div
             className={styles["table__row"]}
             role="row"
@@ -71,7 +89,7 @@ function Table<RowType>(props: TableProps<RowType>) {
               ...style,
             }}
           >
-            {columns.map((col, colIndex) => 
+            {columns.map((col, colIndex) =>
               <div
                 role="columnheader"
                 key={col.dataIndex + colIndex}
@@ -91,14 +109,16 @@ function Table<RowType>(props: TableProps<RowType>) {
             )}
           </div>
         </div>
+      </>
       }
-      <div role="presentation">
+      <div role="presentation" id={scrollableTarget}
+        className="px-16 xl:px-32">
         <InfiniteScroll
           next={next}
           loader={"loading"}
-          scrollableTarget="app__main"
-          dataLength={dataSource?.length}
-          hasMore={dataSource?.length < total}
+          scrollableTarget={scrollableTarget ?? "app__main"}
+          dataLength={dataSource?.length ?? 0}
+          hasMore={(dataSource?.length ?? 0) < total}
           scrollThreshold={0.95}
         >
           {dataSource?.map?.((item, index) => {

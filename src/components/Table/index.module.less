@@ -4,49 +4,74 @@
       display: none;
     }
   }
+
   &__thead {
     position: sticky;
     top: 64px;
     z-index: 2;
-    border-bottom: 1px solid transparent;
-    background-color: #181818;
+
+    > .table__row {
+      height: 36px;
+      border-bottom: 1px solid hsla(0, 0%, 100%, 0.1);
+    }
+
+    &:global(.isPinned) {
+      //padding: 0;
+      >.table__row{
+        border: none;
+      }
+      border-bottom: 1px solid hsla(0, 0%, 100%, 0.1);
+    }
+
+    //background-color: #181818;
   }
+
   &__row {
     display: grid;
     padding: 0 16px;
     grid-gap: 16px;
     align-items: center;
     height: 56px;
+
     :global(.button:not([aria-checked="true"])) {
       opacity: 0;
     }
+
     &:not([aria-rowindex="1"]):hover {
       background-color: hsla(0, 0%, 100%, 0.1);
+
       :global(.button) {
         opacity: 1;
       }
+
       :global(.link) {
         color: var(--text-base);
       }
     }
+
     &[aria-selected="true"] {
       background-color: hsla(0, 0%, 100%, 0.3) !important;
+
       :global(.link) {
         color: var(--text-base);
       }
     }
+
     &[aria-disabled="true"] {
       opacity: 0.4;
       pointer-events: none;
     }
   }
+
   &__cell {
     &.left {
       justify-self: flex-start;
     }
+
     &.right {
       justify-self: flex-end;
     }
+
     min-width: 0;
   }
 }
