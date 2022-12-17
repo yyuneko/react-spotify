@@ -1,11 +1,14 @@
 import { useRequest } from "ahooks";
 import classnames from "classnames";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useIntl } from "react-intl";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 import DevicePicker from "@assets/icons/device-picker.svg";
 import Fullscreen from "@assets/icons/fullscreen.svg";
+import VolumeMute from "@assets/icons/mute.svg";
 import NextTrack from "@assets/icons/next-track.svg";
 import OpenLyric from "@assets/icons/open-lyric.svg";
 import OpenQueue from "@assets/icons/open-queue.svg";
@@ -17,6 +20,7 @@ import Shuffle from "@assets/icons/shuffle.svg";
 import SingleTrackRepeat from "@assets/icons/single-track-repeat.svg";
 import Volume from "@assets/icons/volume.svg";
 import { Follow } from "@components/Follow";
+import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
 import ProgressBar from "@components/ProgressBar";
@@ -30,14 +34,17 @@ import {
   removeTracksUser,
   saveTracksUser,
 } from "@service/tracks";
+import { TrackObject } from "@service/tracks/types";
 import { state } from "@store/index";
 import {
-  PlayerState,
+  incPosition,
+  setMute,
+  setPosition,
   setRepeatMode,
   setShuffle,
   setVolume,
 } from "@store/player/reducer";
-import { dayjs } from "@utils/index";
+import { dayjs, usePlayContext } from "@utils/index";
 import { useSpotifyPlayer } from "@utils/player";
 
 import styles from "./index.module.less";
@@ -52,20 +59,23 @@ export default function Player() {
   const dispatch = useDispatch();
   const spotify = useSpotifyPlayer();
   const { formatMessage } = useIntl();
-  const [curPosition, setCurPosition] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const position = useSelector<state, number>((state) => state.player.position);
+  const paused = useSelector<state, boolean>((state) => state.player.paused);
+  const volume = useSelector<state, number>((state) => state.player.volume);
+  const shuffle = useSelector<state, boolean>((state) => state.player.shuffle);
+  const duration = useSelector<state, number>((state) => state.player.duration);
+  const repeatMode = useSelector<state, number>((state) => state.player.repeatMode);
 
-  const {
-    paused,
-    volume,
-    context,
-    shuffle,
-    duration,
-    position,
-    repeatMode,
-    trackWindow: { currentTrack },
-    device: {current: currentDevice},
-  } = useSelector<state, PlayerState>((state) => state.player);
-
+  const context = useSelector<state,
+    { type?: string; id?: string; uri?: string }>((state) => state.player.context);
+  const currentTrack = useSelector<state, TrackObject | undefined>(
+    (state) => state.player.trackWindow.currentTrack
+  );
+  const currentDevice = useSelector<state, string | undefined>(
+    (state) => state.player.device.current
+  );
   const { data: isSavingTrack, run: checkIsSavingTrack } = useRequest(
     checkUsersSavedTracks,
     { manual: true }
@@ -86,22 +96,9 @@ export default function Player() {
   });
 
   useEffect(() => {
-    console.log({
-      currentTrack,
-      volume,
-      paused,
-      position,
-      shuffle,
-      repeatMode,
-      context,
-    });
-    setCurPosition(position);
-  }, [position]);
-
-  useEffect(() => {
     const timer = setInterval(() => {
       if (!paused) {
-        setCurPosition((pos) => pos + 1000);
+        dispatch(incPosition());
       }
     }, 1000);
 
@@ -124,38 +121,18 @@ export default function Player() {
     }
   };
 
-  const handleResume = () => {
-    currentTrack &&
-      spotify.start(
-        {
-          device_id: spotify.deviceId,
-        },
-        context.uri
-          ? {
-            context_uri: context.uri,
-            offset: {
-              uri: currentTrack.uri,
-            },
-            position_ms: curPosition,
-          }
-          : {
-            uris: [currentTrack.uri],
-            position_ms: curPosition,
-          }
-      );
-  };
-
-  const handlePause = () =>
-    // spotify.pause({ device_id: spotify.deviceId })
-    spotify.player.pause();
+  const handleTogglePlay = usePlayContext(context.uri ? {
+    type: "context",
+    uri: context.uri
+  } : { type: "track", uri: currentTrack?.uri });
 
   const handleNext = () =>
     spotify.skipToNext({
-      device_id: spotify.deviceId,
+      device_id: currentDevice,
     });
 
   const handleTrackSeek = (offset: number, ready = true) => {
-    setCurPosition(() => offset * (duration ?? 0));
+    setPosition(offset * (duration ?? 0));
 
     if (ready) {
       spotify.player.seek(offset * (duration ?? 0));
@@ -167,7 +144,8 @@ export default function Player() {
       if(!currentDevice){ return; }
       const volume = Math.max(0, Math.min(1, offset));
       setVolumeForUsersPlayback({
-        volume_percent: Math.ceil(volume * 100),device_id: currentDevice
+        volume_percent: Math.ceil(volume * 100),
+        device_id: currentDevice,
       })
         .then(() => {
           dispatch(setVolume(offset));
@@ -180,7 +158,8 @@ export default function Player() {
   const handleSwitchShuffle = () => {
     if(!currentDevice){ return; }
     toggleShuffleForUsersPlayback({
-      state: !shuffle,device_id: currentDevice
+      state: !shuffle,
+      device_id: currentDevice,
     })
       .then(() => {
         dispatch(setShuffle(!shuffle));
@@ -191,17 +170,39 @@ export default function Player() {
     if(!currentDevice){ return; }
     const mode = (repeatMode + 1) % 3 ;
     setRepeatModeOnUsersPlayback({
-      state: repeatModes[mode],device_id: currentDevice
-    }).then(() => {
-      dispatch(setRepeatMode(mode));
-    });
+      state: repeatModes[mode],
+      device_id: currentDevice,
+    })
+      .then(() => {
+        dispatch(setRepeatMode(mode));
+      });
+  };
+
+  const handleSOpenLyrics = () => {
+    if (location.pathname === "/lyrics") {
+      navigate(-1);
+    } else {
+      navigate("/lyrics");
+    }
+  };
+
+  const handleOpenQueue = () => {
+    if (location.pathname === "/queue") {
+      navigate(-1);
+    } else {
+      navigate("/queue");
+    }
+  };
+
+  const handleSwitchMuteMode = () => {
+    dispatch(setMute(volume != 0));
   };
 
   return (
     <div className={styles["player"]}>
       {currentTrack && 
         <div className={styles["playerTrack"]}>
-          <img
+          <Image
             src={currentTrack.album.images[0].url}
             width="56"
             height="56"
@@ -217,11 +218,14 @@ export default function Player() {
               </Link>
             </div>
             <Join>
-              {currentTrack.artists.map((artist) => 
+              {currentTrack.artists.map((artist) =>
                 <Link
-                  key={artist.id}
+                  key={artist.id ?? artist.uri}
                   className="text-s"
-                  to={`/artist/${artist.id}`}
+                  to={`/artist/${
+                    artist.id ??
+                    artist.uri?.match?.(/spotify:artist:([a-zA-Z0-9]+)/)?.[1]
+                  }`}
                 >
                   {artist.name}
                 </Link>
@@ -264,30 +268,19 @@ export default function Player() {
               <PreviousTrack
                 onClick={() =>
                   spotify.skipToPrevious({
-                    device_id: spotify.deviceId,
+                    device_id: currentDevice,
                   })
                 }
               />
             </button>
           </div>
-          {paused && 
-            <button
-              onClick={handleResume}
-              className={styles["togglePlay"] + " button"}
-              title={formatMessage({ id: "playback-control.play" })}
-            >
-              <Paused />
-            </button>
-          }
-          {!paused && 
-            <button
-              onClick={handlePause}
-              className={styles["togglePlay"] + " button"}
-              title={formatMessage({ id: "playback-control.pause" })}
-            >
-              <Playing />
-            </button>
-          }
+          <button
+            onClick={handleTogglePlay}
+            className={styles["togglePlay"] + " button"}
+            title={formatMessage({ id: "playback-control." + paused ? "pause" : "play" })}
+          >
+            {paused ? <Paused/> : <Playing/>}
+          </button>
           <div className={styles["playerController__buttonsRight"]}>
             <button
               onClick={handleNext}
@@ -313,33 +306,47 @@ export default function Player() {
                       : "playback-control.disable-repeat",
               })}
             >
-              {repeatMode === 2 ? <SingleTrackRepeat /> : <Repeat />}
+              {repeatMode === 2 ? <SingleTrackRepeat/> : <Repeat/>}
             </button>
           </div>
         </div>
         <div className={styles["progressBar"]}>
-          {dayjs.duration(curPosition).format("mm:ss")}
+          {dayjs.duration(position).format("mm:ss")}
           <ProgressBar
             max={duration}
             className="flex-1"
-            value={curPosition}
+            value={position}
             onSeek={handleTrackSeek}
           />
           {dayjs.duration(duration ?? 0).format("mm:ss")}
         </div>
       </div>
       <div className={styles["playerOther"]}>
-        <button className="button">
-          <OpenLyric />
+        <button
+          className={classnames({
+            button: true,
+            checked: location.pathname === "/lyrics",
+            "checked-icon": location.pathname === "/lyrics",
+          })}
+          onClick={handleSOpenLyrics}
+        >
+          <OpenLyric/>
         </button>
-        <button className="button">
-          <OpenQueue />
+        <button
+          className={classnames({
+            button: true,
+            checked: location.pathname === "/queue",
+            "checked-icon": location.pathname === "/queue",
+          })}
+          onClick={handleOpenQueue}
+        >
+          <OpenQueue/>
         </button>
         <button className="button">
           <DevicePicker />
         </button>
-        <button className="button">
-          <Volume />
+        <button className="button" onClick={handleSwitchMuteMode}>
+          {volume != 0 ? <Volume/> : <VolumeMute/>}
         </button>
 
         <ProgressBar
