@@ -16,22 +16,24 @@ const Artist = lazy(() => import("@containers/Artist"));
 const Collection = lazy(() => import("@containers/Collection"));
 const Lyrics = lazy(() => import("@containers/Lyrics"));
 const Queue = lazy(() => import("@containers/Queue"));
+const Genre = lazy(() => import("@containers/Genre"));
+const Discography = lazy(() => import("@containers/Artist/components/Discography"));
 const routes = [
   {
     path: "/login",
-    element: 
+    element:
       <AuthProvider>
-        <Login />
+        <Login/>
       </AuthProvider>
     ,
   },
   {
     path: "/",
-    element: 
+    element:
       <AuthProvider>
         <Provider store={store}>
           <ProtectedRoute>
-            <MainLayout />
+            <MainLayout/>
           </ProtectedRoute>
         </Provider>
       </AuthProvider>
@@ -40,84 +42,101 @@ const routes = [
       {
         path: "",
         index: true,
-        element: 
+        element:
           <Suspense>
-            <Home />
+            <Home className="pl-16 pr-16 xl:pl-32 xl:pr-32"/>
           </Suspense>
         ,
       },
       {
         path: "album/:id",
-        element: 
+        element:
           <Suspense>
-            <AlbumDetail />
+            <AlbumDetail/>
           </Suspense>
         ,
       },
       {
         path: "playlist/:id",
-        element: 
+        element:
           <Suspense>
-            <PlayListDetail />
+            <PlayListDetail/>
           </Suspense>
         ,
       },
       {
         path: "search",
-        element: 
+        element:
           <Suspense>
-            <Search />
+            <Search/>
           </Suspense>
         ,
         children: [{ path: ":keyword" }, { path: ":keyword/:type" }],
       },
       {
         path: "user/:id",
-        element: 
+        element:
           <Suspense>
-            <Profile />
+            <Profile/>
           </Suspense>
         ,
       },
       {
         path: "collection/:type",
-        element: 
+        element:
           <Suspense>
-            <Collection />
+            <Collection/>
           </Suspense>
       },
       {
         path: "collection/tracks",
-        element: 
+        element:
           <Suspense>
-            <FavoriteTracks />
+            <FavoriteTracks/>
           </Suspense>
         ,
       },
       {
         path: "artist/:id",
-        element: 
-          <Suspense>
-            <Artist />
-          </Suspense>
-        ,
+        children: [
+          {
+            path: "",
+            element:
+              <Suspense>
+                <Artist/>
+              </Suspense>
+          },
+          {
+            path: "discography/:filter",
+            element:
+              <Suspense>
+                <Discography/>
+              </Suspense>
+          }
+        ]
       },
       {
         path: "lyrics",
-        element: 
+        element:
           <Suspense>
-            <Lyrics />
+            <Lyrics/>
           </Suspense>
         ,
       },
       {
         path: "/queue",
-        element: 
+        element:
           <Suspense>
-            <Queue />
+            <Queue/>
           </Suspense>
         ,
       },
+      {
+        path: "/genre/:id",
+        element: <Suspense>
+          <Genre/>
+        </Suspense>
+      }
     ],
   },
   { path: "*", element: <div>404 Not Found</div> },
