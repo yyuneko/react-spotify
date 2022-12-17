@@ -10,10 +10,11 @@ import { SaveAlbum } from "@components/Follow";
 import Join from "@components/Join";
 import Link from "@components/Link";
 import { PlaylistMenu } from "@components/Menu";
+import Section from "@components/Section";
 import Table from "@components/Table";
 import { getAnAlbum, getAnAlbumsTracks } from "@service/albums";
 import { getAnArtistsAlbums } from "@service/artists";
-import { TrackObject } from "@service/tracks/types";
+import { SimplifiedTrackObject } from "@service/tracks/types";
 import { state } from "@store/index";
 import { setTitle } from "@store/ui/reducer";
 import useColumns from "@utils/columns";
@@ -30,15 +31,8 @@ function AlbumDetail() {
   const dispatch = useDispatch();
   const colcount = useSelector<state, number>((state) => state.ui.colcount);
   const [rowSelected, setRowSelected] = useState<number | undefined>();
-  const [tracks, setTracks] = useState<TrackObject[]>([]);
-
+  const [tracks, setTracks] = useState<SimplifiedTrackObject[]>([]);
   const paused = useSelector<state, boolean>((state) => state.player.paused);
-  useSelector<state, { type?: string; id?: string; uri?: string }>(
-    (state) => state.player.context
-  );
-  useSelector<state, TrackObject | undefined>(
-    (state) => state.player.trackWindow.currentTrack
-  );
   const currentDevice = useSelector<state, string | undefined>(
     (state) => state.player.device.current
   );
@@ -89,6 +83,7 @@ function AlbumDetail() {
       runGetAlbumDetail(id);
     }
   }, [id]);
+
   useEffect(() => {
     if (paused && albumDetail) {
       dispatch(setTitle(`Spotify - ${albumDetail.name}`));
@@ -107,7 +102,7 @@ function AlbumDetail() {
       });
   };
 
-  const handleOnRow = (row: TrackObject, index: number) => ({
+  const handleOnRow = (row: SimplifiedTrackObject, index: number) => ({
     onClick: () => {
       if (index === rowSelected) {
         setRowSelected(undefined);
@@ -173,7 +168,7 @@ function AlbumDetail() {
     >
       {albumDetail && 
         <>
-          <Table<TrackObject>
+          <Table<SimplifiedTrackObject>
             gridTemplateColumns="16px 4fr minmax(120px, 1fr)"
             colcount={3}
             total={albumDetail.tracks.total}
@@ -185,7 +180,7 @@ function AlbumDetail() {
             onRow={handleOnRow}
             rowSelection={rowSelected}
           />
-          <div className="mt-32">
+          <div className="mt-32 px-16 xl:px-32">
             <div className="text-s">
               {dayjs(albumDetail.release_date).format(
                 formatMessage({ id: "date-format" })
@@ -196,29 +191,22 @@ function AlbumDetail() {
                 key={copyright.type}
                 style={{ fontSize: "0.6785rem", fontWeight: "400" }}
               >
-                {copyright.type === "P" &&
-                  (copyright.text.startsWith("(P)")
-                    ? copyright.text.replace("(P)", "℗")
-                    : "℗ " + copyright.text)}
-                {copyright.type === "C" &&
-                  (copyright.text.startsWith("(C)")
-                    ? copyright.text.replace("(C)", "©")
-                    : "© " + copyright.text)}
-                {copyright.type === "R" &&
-                  (copyright.text.startsWith("(R)")
-                    ? copyright.text.replace("(R)", "®")
-                    : "® " + copyright.text)}
+                {copyright.type === "P" && copyright.text}
+                {copyright.type === "C" && copyright.text}
+                {copyright.type === "R" && copyright.text}
               </p>
             )}
           </div>
-          {!!relatedAlbums?.items?.length && 
-            <div>
-              <h2 className="text-base">
-                {format(
-                  formatMessage({ id: "album-page.more-by-artist" }),
-                  albumDetail.artists[0].name
-                )}
-              </h2>
+          {!!relatedAlbums?.items?.length &&
+            <Section
+              className="px-16 xl:px-32 mt-48"
+              title={format(
+                formatMessage({ id: "album-page.more-by-artist" }),
+                albumDetail.artists[0]?.name
+              )}
+              to={`/artist/${albumDetail.artists[0]?.id}/discography/all`}
+              id="artist-page.show-discography"
+            >
               <div
                 className={"grid " + styles["albumRelated"]}
                 style={{
@@ -237,7 +225,7 @@ function AlbumDetail() {
                   />
                 )}
               </div>
-            </div>
+            </Section>
           }
         </>
       }

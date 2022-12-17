@@ -231,8 +231,11 @@ export default function Search(props: {
   return (
     <>
       <section
-        className="py-24 mt-24 flex justify-between sticky"
-        style={{ borderTop: "1px solid hsla(0,0%,100%,0.1)" ,top: "64px" }}>
+        className="py-24 mt-24 flex justify-between sticky px-16 xl:px-32 z-20 top-64"
+        style={{ 
+          borderTop: "1px solid hsla(0,0%,100%,0.1)",
+          backgroundColor: "var(--bg-base)" 
+        }}>
         <div>
           <h1 className="text-base text-2xl font-bold">
             {formatMessage({ id: "playlist.curation.title" })}
@@ -257,7 +260,7 @@ export default function Search(props: {
         />
       </section>
       {currentMode.mode === "search" &&
-        <div>
+        <div className="min-h-200">
           {currentMode.type != "all" &&
             <h1 onClick={handleBackToPreviousMode} className="text-lg flex items-center">
               <BackToIcon width="24" height="24"/>
@@ -283,7 +286,7 @@ export default function Search(props: {
         </div>
       }
       {currentMode.mode === "view" &&
-        <div>
+        <div className="min-h-200">
           <h1 onClick={handleBackToPreviousMode} className="text-lg flex items-center">
             <BackToIcon width="24" height="24"/>
             {currentMode.detail?.name}

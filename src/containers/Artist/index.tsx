@@ -142,6 +142,7 @@ function Artist() {
 
   return (
     <ContentContainer
+      className="px-16 xl:px-32"
       initialLoading={loading}
       type="artist"
       cover={artistDetail?.images?.[0]?.url}

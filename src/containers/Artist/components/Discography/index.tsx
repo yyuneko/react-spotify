@@ -158,7 +158,7 @@ export default function Discography() {
           />)}
         </div> :
           <div
-            className="grid pl-16 pr-16 xl:pl-32 xl:pr-32"
+            className="grid px-16 xl:px-32"
             aria-colcount={colcount}
             style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}
           >

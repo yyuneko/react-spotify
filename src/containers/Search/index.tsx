@@ -86,11 +86,11 @@ function Search() {
         </div>
       </NavBar>
       {keyword ?
-        <div className={styles["search__tabs"] + " pl-32 pr-32"}>
+        <div className={styles["search__tabs"] + " px-16 xl:px-32"}>
           <Tabs defaultActiveKey={type} items={tabs}/>
         </div>
         :
-        <section className="pl-32 pr-32">
+        <section className="px-16 xl:px-32">
           <h2>{formatMessage({ id: "search.title.recent-searches" })}</h2>
           {cache.get("history")
             ?.map

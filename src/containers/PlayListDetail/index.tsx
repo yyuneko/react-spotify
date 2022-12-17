@@ -288,7 +288,7 @@ function PlayListDetail() {
           {id &&
             user?.id === playlistDetail.owner.id &&
             (extenderMode === "recommendation" ?
-              <section>
+              <section className="px-16 xl:px-32">
                 <button className="float-right"
                   onClick={() => setExtenderMode("search")}
                 >
