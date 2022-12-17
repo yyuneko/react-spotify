@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useIntl } from "react-intl";
 import { useSelector } from "react-redux";
 
-import Anonymous from "@assets/icons/anonymous.svg";
 import {
   AlbumCard,
   ArtistCard,
@@ -126,7 +125,6 @@ export default function SearchAll(props: SearchTabProps) {
                   media={artist.images?.[0]?.url}
                   name={artist.name}
                   type={formatMessage({ id: "card.tag.artist" })}
-                  fallback={<Anonymous width="64" height="64" />}
                 />
               )}
             </div>

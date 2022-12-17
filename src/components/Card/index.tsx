@@ -4,6 +4,8 @@ import { useIntl } from "react-intl";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
+import ArtistIcon from "@assets/icons/artist.svg";
+import PlaylistIcon from "@assets/icons/playlist.svg";
 import Image from "@components/Image";
 import Join from "@components/Join";
 import Link from "@components/Link";
@@ -63,7 +65,7 @@ export function Card(props: CardProps) {
           <div
             className={classnames({
               flex: true,
-              "flex-center": true,
+              "justify-center": true,
               [styles["card__mediaContainer"]]: true,
               [styles["card__mediaCircle"]]: mediaShape === "circle",
             })}
@@ -128,7 +130,8 @@ export function PlaylistCard(props: PlaylistCardProps) {
 
   return (
     <Card
-      media={<Image src={media} className="w-1-1" />}
+      media={media ? <Image src={media} className="w-1-1"/> :
+        <PlaylistIcon width="64" height="64" className="self-center"/>}
       contextUri={`spotify:playlist:${id}`}
       title={<Link to={`/playlist/${id}`}>{name}</Link>}
       description={
@@ -168,17 +171,17 @@ interface ArtistCardProps extends CommonProps {
   media: string;
   name: string;
   type: string;
-  fallback?: ReactNode;
 }
 
 export function ArtistCard(props: Partial<ArtistCardProps>) {
-  const { id, media, name, type, fallback } = props;
+  const { id, media, name, type } = props;
   const navigate = useNavigate();
 
   return (
     <Card
       mediaShape="circle"
-      media={media ? <Image src={media} className="w-1-1" /> : fallback}
+      media={media ? <Image src={media} className="w-1-1"/> :
+        <ArtistIcon width="64" height="64" className="self-center"/>}
       contextUri={`spotify:artist:${id}`}
       title={<div>{name}</div>}
       description={<div>{type}</div>}
