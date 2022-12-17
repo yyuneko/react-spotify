@@ -1,4 +1,6 @@
-import React, { ReactNode } from "react";
+import classnames from "classnames";
+import React, { ReactNode, useMemo } from "react";
+import { useInView } from "react-intersection-observer";
 import { useIntl } from "react-intl";
 import { useSelector } from "react-redux";
 
@@ -41,6 +43,10 @@ export default function ContentContainer(props: ContentContainerProps) {
     operationExtra,
   } = props;
   const { formatMessage } = useIntl();
+  const { ref, entry } = useInView({
+    root: document.querySelector("#app__main"),
+    threshold: 1
+  });
   const paused = useSelector<state, boolean>((state) => state.player.paused);
   const context = useSelector<state,
     { type?: string; id?: string; uri?: string; name?: string }>
@@ -48,7 +54,7 @@ export default function ContentContainer(props: ContentContainerProps) {
   const fontSize = useSelector<state, number>(state => state.ui.fontSize);
   const handlePlayCurrentContext = usePlayContext({ uri: contextUri });
 
-  const getTitleFontSize = () => {
+  const titleFontSize = useMemo( () => {
     if (title) {
       const width = (document.getElementById("app__main")
         ?.getBoundingClientRect()?.width ?? 300) - 300;
@@ -77,14 +83,28 @@ export default function ContentContainer(props: ContentContainerProps) {
     }
 
     return 2;
-  };
+  },[title]);
 
   return (
     <Loading loading={initialLoading}>
-      <NavBar/>
+      <NavBar>
+        <div
+          className={"flex gap-16 items-center opacity-0 transition-opacity "
+            + classnames({
+              "duration-300 opacity-100": (entry?.intersectionRatio ?? 1) < 1
+            })}>
+          <PlayButton
+            isPlaying={!paused && context.uri === contextUri}
+            size={48}
+            onClick={handlePlayCurrentContext}/>
+          <h1 className="text-base text-2xl text-overflow-ellipsis">
+            {title}
+          </h1>
+        </div>
+      </NavBar>
       <div
         className="pl-16 pr-16 xl:pl-32 xl:pr-32 pb-24 flex w-full items-end box-border"
-        style={{ maxHeight: "436px",minHeight: "276px",height: "calc(30vh - 64px)" }}
+        style={{ maxHeight: "436px", minHeight: "276px", height: "calc(30vh - 64px)" }}
       >
         <Image
           alt="cover"
@@ -97,7 +117,7 @@ export default function ContentContainer(props: ContentContainerProps) {
           }
           <div
             style={title
-              ? { fontSize: `${getTitleFontSize()}rem` }
+              ? { fontSize: `${titleFontSize}rem` }
               : undefined}
             className="text-8xl text-base py-16 font-black">{title}</div>
           {description && <p className="text-m">{description}</p>}
@@ -109,6 +129,7 @@ export default function ContentContainer(props: ContentContainerProps) {
         </div>
       </div>
       <div
+        ref={ref}
         style={{ height: "104px" }}
         className="flex pl-16 pr-16 xl:pl-32 xl:pr-32 pt-24 pb-24 box-border items-center"
       >
@@ -120,7 +141,7 @@ export default function ContentContainer(props: ContentContainerProps) {
         />
         {operationExtra}
       </div>
-      <div className="pl-16 pr-16 xl:pl-32 xl:pr-32">{children}</div>
+      <div>{children}</div>
     </Loading>
   );
 }
