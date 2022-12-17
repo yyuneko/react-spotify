@@ -1,6 +1,6 @@
 import React from "react";
 import { useIntl } from "react-intl";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import NavBar from "@components/NavBar";
 import Tabs from "@components/Tabs";
@@ -11,12 +11,14 @@ import Playlists from "@containers/Collection/Playlists";
 function Collection() {
   const { type } = useParams();
   const { formatMessage } = useIntl();
+  const navigate = useNavigate();
 
   return (
     <>
       <NavBar>
         <Tabs
           defaultActiveKey={type}
+          onChange={key => navigate(`/collection/${key}`)}
           items={[
             {
               key: "playlists",

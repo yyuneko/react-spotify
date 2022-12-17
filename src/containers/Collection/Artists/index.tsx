@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { useIntl } from "react-intl";
 
-import Anonymous from "@assets/icons/anonymous.svg";
 import { ArtistCard } from "@components/Card";
 import Loading from "@components/Loading";
 import { ArtistObject } from "@service/artists/types";
@@ -66,7 +65,6 @@ export default function Artists() {
                 media={artist.images?.[0]?.url}
                 name={artist.name}
                 type={formatMessage({ id: "card.tag.artist" })}
-                fallback={<Anonymous width="64" height="64" />}
               />
             )}
           </div>

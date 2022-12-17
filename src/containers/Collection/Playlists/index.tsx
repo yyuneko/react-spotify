@@ -37,34 +37,34 @@ function LikedSongsCard(props: {
 
   return (
     <div
-      className="flex p-20 flex-col items-stretch relative"
+      className="flex gap-20 p-20 flex-col items-stretch relative justify-end text-base"
       style={{
         background: "linear-gradient(149.46deg,#450af5,#8e8ee5 99.16%)",
         gridColumn: "1/3",
       }}
       onClick={() => navigate("/collection/tracks")}
     >
-      <div className="flex">
-        <Join className="overflow-hidden text-ellipsis"
+      <div>
+        <Join
+          ellipsis={false}
           style={{
             display: "-webkit-box",
-            lineClamp: 3,
             maxHeight: "130px",
-          }}
+          }as React.CSSProperties}
         >
           {likedSongs?.items?.map?.((track) => 
             <span key={track.track.id}>
-              <span className="text-base">
+              <span>
                 {track.track.artists.map((artist) => artist.name).join(",")}
               </span>
               &nbsp;
-              <span>{track.track.name}</span>
+              <span className="opacity-70">{track.track.name}</span>
             </span>
           )}
         </Join>
       </div>
-      <div className="text-base">
-        <div style={{ fontSize: "2rem" }}>
+      <div>
+        <div className="text-4xl">
           {formatMessage({ id: "sidebar.liked_songs" })}
         </div>
         <div>
@@ -74,7 +74,7 @@ function LikedSongsCard(props: {
           )}
         </div>
       </div>
-      <div className="absolute" style={{ right: "16px", bottom: "16px" }}>
+      <div className="absolute right-16 bottom-16">
         <PlayButton
           size={56}
           className="mr-32"
