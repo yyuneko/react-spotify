@@ -1,5 +1,6 @@
 import { useDebounce, useRequest } from "ahooks";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import { useIntl } from "react-intl";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -13,6 +14,7 @@ import SearchArtists from "@containers/Search/components/artists";
 import SearchPlaylists from "@containers/Search/components/playlists";
 import SearchTracks from "@containers/Search/components/tracks";
 import { getCategories } from "@service/categories";
+import { CategoryObject } from "@service/categories/types";
 import { useCurrentUser, useLocalStorage } from "@utils/index";
 
 import styles from "./index.module.less";
@@ -24,7 +26,7 @@ export interface SearchTabProps {
 function Search() {
   const { keyword = "", type = "all" } = useParams();
   const navigate = useNavigate();
-  const { formatMessage } = useIntl();
+  const { formatMessage,locale } = useIntl();
   const cache = useLocalStorage();
   const user = useCurrentUser();
   const query = useDebounce(decodeURIComponent(keyword), { wait: 500 });
@@ -63,13 +65,33 @@ function Search() {
     ],
     [query]
   );
-  const { data: categories, run: runGetCategories } =
-    useRequest(getCategories, { manual: true });
+  const [totalCategories,setTotalCategories] = useState(0);
+  const [categories,setCategories] = useState<CategoryObject[]>([]);
+  const { run: runGetCategories } =
+    useRequest(getCategories, { manual: true,
+      onSuccess: res => {
+        setTotalCategories(res.categories.total);
+        setCategories(categories.concat(res.categories.items));
+      } });
+
   useEffect(() => {
     if (!query && user) {
-      runGetCategories({ country: user.country });
+      runGetCategories({
+        limit: 10,
+        locale: locale.replace("-","_")
+      });
     }
   }, [!query, user]);
+
+  const handleGetNextCategories = () => {
+    if (!query && user) {
+      runGetCategories({ 
+        limit: 10,
+        offset: categories.length,
+        locale: locale.replace("-","_")
+      });
+    }
+  };
 
   return (
     <div className={styles["search"]}>
@@ -97,20 +119,29 @@ function Search() {
             ?.((item: string) =>
               <div>{item}</div>
             )}
-          <div className="grid"
-            style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}>
-            {categories?.categories?.items?.map(category =>
-              <div
-                key={category.id}
-                className={
-                  "aspect-square w-full cursor-pointer text-2xl font-bold text-base "
+          <InfiniteScroll
+            next={handleGetNextCategories} 
+            hasMore={categories.length < totalCategories}
+            loader={"Loading"}
+            dataLength={categories.length}
+            scrollableTarget="app__main"
+          >
+            <div className="grid"
+              style={{ gridTemplateColumns: "repeat(var(--col-count),1fr)" }}>
+              {categories.map(category =>
+                <div
+                  key={category.id}
+                  className={
+                    "aspect-square w-full cursor-pointer text-2xl font-bold text-base "
                   + styles["category"]}
-                aria-label={category.name}
-                onClick={() => navigate(`/genre/${category.id}`)}
-              >
-                <Image className="w-full" src={category.icons[0]?.url}/>
-              </div>)}
-          </div>
+                  aria-label={category.name}
+                  onClick={() => navigate(`/genre/${category.id}`)}
+                >
+                  <Image className="w-full" src={category.icons[0]?.url}/>
+                </div>
+              )}
+            </div>
+          </InfiniteScroll>
         </section>
       }
     </div>
